@@ -32,7 +32,7 @@
 
 ## TODO List
 - [ ] Add covariate support
-- [ ] Enable fine-tuning of Time-MoE for forecasting with dynamic features and support time series classification
+- [x] Enable fine-tuning of Time-MoE for forecasting with dynamic features and support time series classification
 
 ## Updates/News:
 
@@ -217,6 +217,46 @@ export WORLD_SIZE=<world_size>
 export RANK=<rank>
 
 python torch_dist_run.py main.py -d <data_path>
+```
+## 🔥 Fine-tuning Time-MoE for Classification Tasks
+
+Time-MoE supports both **sequence classification** (assigning a single label to the entire time series) and **token classification** (assigning labels to each time step). The data format remains the same as forecasting, with an additional `label` field.
+
+> 📁 **See [`classification_examples/`](classification_examples/) for complete examples, data preparation scripts, and inference utilities.**
+
+**Sequence Classification Data Format**
+For sequence classification, each time series gets one label:
+```jsonl
+{"sequence": [1.0, 2.0, 3.0, ...], "label": 0}
+{"sequence": [11.0, 22.0, 33.0, ...], "label": 1}
+```
+
+**Token Classification Data Format**
+For token classification, each time step gets a label:
+```jsonl
+{"sequence": [1.0, 2.0, 3.0, ...], "label": [0, 1, 0, ...]}
+{"sequence": [11.0, 22.0, 33.0, ...], "label": [1, 0, 1, ...]}
+```
+
+**Training Commands**
+
+For **sequence classification**:
+```bash
+python torch_dist_run.py main.py -d <data_path> --task_type sequence_classification --num_classes <num_classes>
+```
+
+For **token classification**:
+```bash
+python torch_dist_run.py main.py -d <data_path> --task_type token_classification --num_classes <num_classes>
+```
+
+**Additional Classification Arguments:**
+- `--classifier_dropout`: Dropout rate for classification head (default: 0.1)
+- `--freeze_backbone`: Freeze the Time-MoE backbone and only train the classification head (recommended for small datasets)
+
+**Example with all arguments:**
+```bash
+python torch_dist_run.py main.py -d <data_path> --task_type sequence_classification --num_classes 5 --classifier_dropout 0.2 --freeze_backbone
 ```
 
 To train Time-MoE **from scratch**, simply include the `--from_scratch` argument in your command. Here's how it should look:

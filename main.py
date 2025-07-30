@@ -1,6 +1,6 @@
 import argparse
-from time_moe.runner import TimeMoeRunner
 
+from time_moe.runner import TimeMoeRunner
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -49,6 +49,32 @@ if __name__ == "__main__":
         choices=["none", "zero", "max"],
         default="zero",
         help="normalization method for sequence",
+    )
+
+    # Classification arguments
+    parser.add_argument(
+        "--task_type",
+        type=str,
+        choices=["forecasting", "sequence_classification", "token_classification"],
+        default="forecasting",
+        help="Type of task: forecasting (default), sequence_classification, or token_classification",
+    )
+    parser.add_argument(
+        "--num_classes",
+        type=int,
+        default=None,
+        help="Number of classes for classification tasks",
+    )
+    parser.add_argument(
+        "--classifier_dropout",
+        type=float,
+        default=0.1,
+        help="Dropout rate for classification head",
+    )
+    parser.add_argument(
+        "--freeze_backbone",
+        action="store_true",
+        help="Freeze the backbone and only train classification head",
     )
 
     parser.add_argument("--seed", type=int, default=9899, help="random seed")
@@ -187,4 +213,8 @@ if __name__ == "__main__":
         dataloader_num_workers=args.dataloader_num_workers,
         save_only_model=args.save_only_model,
         save_total_limit=args.save_total_limit,
+        task_type=args.task_type,
+        num_classes=args.num_classes,
+        classifier_dropout=args.classifier_dropout,
+        freeze_backbone=args.freeze_backbone,
     )
