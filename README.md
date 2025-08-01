@@ -244,7 +244,7 @@ To create sample classification datasets for testing:
 ```bash
 python -m time_moe.datasets.classification_dataset
 ```
-This will create `sample_data/` directory with both JSONL and JSON format datasets for testing.
+This will create `sample_data/` directory with JSONL format datasets for testing.
 
 **Programmatic Data Generation**
 You can also generate classification data programmatically:
