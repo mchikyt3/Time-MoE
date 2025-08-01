@@ -187,9 +187,9 @@ def main():
 
     # Load input data
     print(f"Loading input data from {args.input_data}...")
-    
+
     # Try to detect file format
-    if args.input_data.endswith('.jsonl'):
+    if args.input_data.endswith(".jsonl"):
         # JSONL format
         input_data = []
         with open(args.input_data) as f:
@@ -202,7 +202,9 @@ def main():
             input_data = json.load(f)
 
     # Handle different input formats
-    if isinstance(input_data, dict) and ("sequence" in input_data or "timeseries" in input_data):
+    if isinstance(input_data, dict) and (
+        "sequence" in input_data or "timeseries" in input_data
+    ):
         # Single sample
         key = "sequence" if "sequence" in input_data else "timeseries"
         timeseries_data = [input_data[key]]
