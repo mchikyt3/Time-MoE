@@ -107,7 +107,8 @@ class TimeMoeRunner:
             config.classifier_dropout = classifier_dropout
             config.pooling_strategy = pooling_strategy
             model = model_class(config)
-            # Load the pretrained weights (this will load the backbone, classification head will be randomly initialized)
+            # Load the pretrained weights (this will load the backbone, classification
+            # head will be randomly initialized)
             pretrained_model = TimeMoeForPrediction.from_pretrained(
                 model_path, **kwargs
             )
@@ -327,7 +328,7 @@ class TimeMoeRunner:
 
         if task_type in ["sequence_classification", "token_classification"]:
             # Use classification dataset wrapper
-            from time_moe.datasets.time_moe_dataset import (
+            from time_moe.datasets.time_moe_dataset import (  # noqa: PLC0415
                 TimeMoeClassificationWrapper,
             )
 
