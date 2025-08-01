@@ -239,6 +239,17 @@ For token classification, each time step gets a label:
 {"sequence": [11.0, 22.0, 33.0, ...], "label": [1, 0, 1, ...]}
 ```
 
+**Generate Sample Data**
+To create sample classification datasets for testing:
+```bash
+python classification_examples/create_sample_classification_data.py
+```
+This will create `sample_data/sequence_classification.jsonl` and `sample_data/token_classification.jsonl` with synthetic data for testing.
+
+**Additional Utilities:**
+- `classification_examples/prepare_classification_data.py` - Data preparation utilities and examples
+- `classification_examples/inference_classification.py` - Inference script for trained classification models
+
 **Training Commands**
 
 For **sequence classification**:
@@ -255,10 +266,100 @@ python torch_dist_run.py main.py -d <data_path> --task_type token_classification
 - `--classifier_dropout`: Dropout rate for classification head (default: 0.1)
 - `--freeze_backbone`: Freeze the Time-MoE backbone and only train the task-specific head (recommended for small datasets or domain-specific fine-tuning)
 
+**Detailed Training Examples:**
+
+1. **Sequence Classification (e.g., Pattern Recognition)**:
+```bash
+python main.py -d sample_data/sequence_classification.jsonl \
+  --task_type sequence_classification \
+  --num_classes 3 \
+  --micro_batch_size 4 \
+  --train_steps 50 \
+  --learning_rate 1e-4 \
+  --precision bf16 \
+  --attn_implementation eager
+```
+
+2. **Token Classification (e.g., Positive/Negative Detection)**:
+```bash
+python main.py -d sample_data/token_classification.jsonl \
+  --task_type token_classification \
+  --num_classes 2 \
+  --micro_batch_size 4 \
+  --train_steps 50 \
+  --learning_rate 1e-4 \
+  --precision bf16 \
+  --attn_implementation eager
+```
+
+3. **With Backbone Freezing (for small datasets)**:
+```bash
+python main.py -d sample_data/sequence_classification.jsonl \
+  --task_type sequence_classification \
+  --num_classes 3 \
+  --freeze_backbone \
+  --micro_batch_size 4 \
+  --train_steps 30 \
+  --learning_rate 1e-3 \
+  --precision bf16 \
+  --attn_implementation eager
+```
+
+4. **Multi-GPU Training**:
+```bash
+python torch_dist_run.py main.py -d sample_data/sequence_classification.jsonl \
+  --task_type sequence_classification \
+  --num_classes 3 \
+  --global_batch_size 32 \
+  --train_steps 100 \
+  --precision bf16 \
+  --attn_implementation eager
+```
+
 **Example with all arguments:**
 ```bash
 python torch_dist_run.py main.py -d <data_path> --task_type sequence_classification --num_classes 5 --classifier_dropout 0.2 --freeze_backbone
 ```
+
+**Pooling Strategies for Sequence Classification**
+
+Time-MoE supports multiple pooling strategies to aggregate timestep representations into a single sequence representation for classification. Choose the strategy based on your data characteristics:
+
+| Strategy | Description | Best For | Example Use Cases |
+|----------|-------------|----------|-------------------|
+| `last_token` | Uses the final timestep representation | Sequential patterns, temporal dependencies, state evolution | Stock price trends, speech recognition final states |
+| `mean` | Average of all timestep representations | Global statistics, overall signal characteristics, stable patterns | Average heart rate, overall sentiment analysis |
+| `max` | Maximum activation across all timesteps | Peak detection, anomaly identification, spike patterns | Seizure detection, network intrusion detection |
+| `attention` | Learns which timesteps are most important | Variable-length patterns, complex temporal relationships, multi-scale features | Document classification, irregular heartbeats |
+| `multi_scale` | Combines mean, max, and last token | Complex patterns, robust classification, unknown pattern types | General-purpose classification, exploratory analysis |
+| `weighted_temporal` | Recent timesteps weighted more heavily | Recent events more important, trend analysis, recency bias | Real-time monitoring, recent trend classification |
+| `conv_pool` | 1D convolution followed by pooling | Local patterns, feature extraction, translation invariance | Pattern recognition, motif detection |
+
+**Using Different Pooling Strategies:**
+```bash
+# Using attention pooling for complex patterns
+python main.py -d <data_path> --task_type sequence_classification --pooling_strategy attention
+
+# Using multi_scale for robust performance (recommended default)
+python main.py -d <data_path> --task_type sequence_classification --pooling_strategy multi_scale
+
+# Using last_token for sequential dependencies
+python main.py -d <data_path> --task_type sequence_classification --pooling_strategy last_token
+```
+
+**Performance Tips:**
+- 🔍 **Try multiple strategies**: Different datasets may benefit from different approaches
+- 📊 **Use multi_scale as baseline**: Combines multiple pooling methods for robust performance  
+- ⚡ **Start with simple strategies**: `last_token` and `mean` are fast and often effective
+- 🎯 **Consider your domain**: Medical signals vs. financial data may need different strategies
+- 📈 **Monitor validation metrics**: Use early stopping to compare strategies fairly
+- 🔄 **Ensemble different strategies**: Train multiple models and combine predictions
+
+**Data Format Notes:**
+- **Sequence Classification**: Each sequence gets ONE label (integer: 0, 1, 2, ...)
+- **Token Classification**: Each timestep gets ONE label (list of integers matching sequence length)
+- Use `-100` in token classification labels for positions to ignore in loss calculation
+- Supported formats: JSONL, JSON, and pickle files
 
 **Freeze Backbone for Forecasting:**
 The `--freeze_backbone` option is also available for forecasting tasks, useful for fine-tuning on domain-specific data:
