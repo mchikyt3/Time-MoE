@@ -72,6 +72,13 @@ if __name__ == "__main__":
         help="Dropout rate for classification head",
     )
     parser.add_argument(
+        "--pooling_strategy",
+        type=str,
+        choices=["last_token", "mean", "max", "attention", "multi_scale", "weighted_temporal", "conv_pool"],
+        default="last_token",
+        help="Pooling strategy for sequence classification",
+    )
+    parser.add_argument(
         "--freeze_backbone",
         action="store_true",
         help="Freeze the backbone and only train classification head",
@@ -216,5 +223,6 @@ if __name__ == "__main__":
         task_type=args.task_type,
         num_classes=args.num_classes,
         classifier_dropout=args.classifier_dropout,
+        pooling_strategy=args.pooling_strategy,
         freeze_backbone=args.freeze_backbone,
     )

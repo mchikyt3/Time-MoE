@@ -1351,12 +1351,36 @@ class TimeMoeForPrediction(TimeMoePreTrainedModel, TSGenerationMixin):
 
 
 class TimeMoeClassificationHead(nn.Module):
-    """Classification head for TimeMoE model."""
+    """Classification head for TimeMoE model with multiple pooling strategies."""
 
-    def __init__(self, hidden_size: int, num_classes: int, dropout: float = 0.1):
+    def __init__(
+        self, 
+        hidden_size: int, 
+        num_classes: int, 
+        dropout: float = 0.1,
+        pooling_strategy: str = "last_token"
+    ):
         super().__init__()
+        self.pooling_strategy = pooling_strategy
         self.dropout = nn.Dropout(dropout)
-        self.classifier = nn.Linear(hidden_size, num_classes)
+        
+        # Determine output dimension based on pooling strategy
+        if pooling_strategy == "multi_scale":
+            # Combines mean, max, and last token
+            pooled_dim = hidden_size * 3
+        elif pooling_strategy == "attention":
+            # Attention-based pooling
+            self.attention = nn.Linear(hidden_size, 1)
+            pooled_dim = hidden_size
+        elif pooling_strategy == "conv_pool":
+            # Temporal convolution + pooling
+            self.temporal_conv = nn.Conv1d(hidden_size, hidden_size, kernel_size=3, padding=1)
+            pooled_dim = hidden_size
+        else:
+            # Simple pooling strategies
+            pooled_dim = hidden_size
+            
+        self.classifier = nn.Linear(pooled_dim, num_classes)
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         """
@@ -1367,9 +1391,52 @@ class TimeMoeClassificationHead(nn.Module):
         -------
             logits: [batch_size, num_classes]
         """
-        # Use the last token's representation for classification
-        # or you can use mean pooling: hidden_states.mean(dim=1)
-        pooled_output = hidden_states[:, -1, :]  # [batch_size, hidden_size]
+        batch_size, seq_len, hidden_size = hidden_states.shape
+        
+        if self.pooling_strategy == "last_token":
+            # Use the last token's representation
+            pooled_output = hidden_states[:, -1, :]
+            
+        elif self.pooling_strategy == "mean":
+            # Mean pooling across sequence length
+            pooled_output = hidden_states.mean(dim=1)
+            
+        elif self.pooling_strategy == "max":
+            # Max pooling across sequence length
+            pooled_output = hidden_states.max(dim=1)[0]
+            
+        elif self.pooling_strategy == "attention":
+            # Attention-based pooling - learn which timesteps are important
+            attention_scores = self.attention(hidden_states)  # [batch_size, seq_len, 1]
+            attention_weights = torch.softmax(attention_scores, dim=1)
+            pooled_output = (hidden_states * attention_weights).sum(dim=1)
+            
+        elif self.pooling_strategy == "multi_scale":
+            # Combine multiple pooling strategies
+            mean_pool = hidden_states.mean(dim=1)
+            max_pool = hidden_states.max(dim=1)[0]
+            last_token = hidden_states[:, -1, :]
+            pooled_output = torch.cat([mean_pool, max_pool, last_token], dim=-1)
+            
+        elif self.pooling_strategy == "weighted_temporal":
+            # Weighted pooling with more emphasis on recent timesteps
+            weights = torch.softmax(
+                torch.arange(seq_len, dtype=torch.float, device=hidden_states.device), 
+                dim=0
+            )
+            pooled_output = (hidden_states * weights.view(1, -1, 1)).sum(dim=1)
+            
+        elif self.pooling_strategy == "conv_pool":
+            # Apply temporal convolution then mean pool
+            # hidden_states: [batch_size, seq_len, hidden_size] -> [batch_size, hidden_size, seq_len]
+            conv_input = hidden_states.transpose(1, 2)
+            conv_features = torch.relu(self.temporal_conv(conv_input))
+            # Pool back: [batch_size, hidden_size, seq_len] -> [batch_size, hidden_size]
+            pooled_output = conv_features.mean(dim=-1)
+            
+        else:
+            raise ValueError(f"Unknown pooling strategy: {self.pooling_strategy}")
+        
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
         return logits
@@ -1392,6 +1459,7 @@ class TimeMoeForSequenceClassification(TimeMoePreTrainedModel):
             hidden_size=config.hidden_size,
             num_classes=self.num_classes,
             dropout=getattr(config, "classifier_dropout", 0.1),
+            pooling_strategy=getattr(config, "pooling_strategy", "last_token"),
         )
 
         # Initialize weights and apply final processing
