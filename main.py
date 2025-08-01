@@ -74,14 +74,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pooling_strategy",
         type=str,
-        choices=["last_token", "mean", "max", "attention", "multi_scale", "weighted_temporal", "conv_pool"],
+        choices=[
+            "last_token",
+            "mean",
+            "max",
+            "attention",
+            "multi_scale",
+            "weighted_temporal",
+            "conv_pool",
+        ],
         default="last_token",
         help="Pooling strategy for sequence classification",
     )
     parser.add_argument(
         "--freeze_backbone",
         action="store_true",
-        help="Freeze the backbone and only train classification head",
+        help="Freeze the backbone and only train task-specific heads "
+        "(forecasting output layers or classification heads)",
     )
 
     parser.add_argument("--seed", type=int, default=9899, help="random seed")

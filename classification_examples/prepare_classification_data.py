@@ -199,6 +199,15 @@ def main():
     print("\n# To freeze the backbone and only train the classification head:")
     print("# Add --freeze_backbone to either command above")
 
+    print("\n# Forecasting with Freeze Backbone (for domain adaptation):")
+    print("python main.py \\")
+    print("  -d your_forecasting_data.jsonl \\")
+    print("  --task_type forecasting \\")
+    print("  --freeze_backbone \\")
+    print("  --learning_rate 1e-3 \\")
+    print("  --micro_batch_size 4 \\")
+    print("  --train_steps 100")
+
     print("\nData format:")
     print("Each JSON file contains a list of samples with:")
     print("- 'timeseries': 2D array [seq_len, n_features]")

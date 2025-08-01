@@ -243,30 +243,48 @@ class TimeMoeRunner:
             )
             log_in_local_rank_0(f"Load model parameters from: {model_path}")
 
-            # Freeze backbone if requested for classification tasks
-            if (
-                train_config.get("freeze_backbone", False)
-                and train_config.get("task_type", "forecasting") != "forecasting"
-            ):
+            # Freeze backbone if requested for any task type
+            if train_config.get("freeze_backbone", False):
                 for param in model.model.parameters():
                     param.requires_grad = False
-                log_in_local_rank_0(
-                    "Backbone parameters frozen, only training classification head"
-                )
+
+                task_type = train_config.get("task_type", "forecasting")
+                if task_type == "forecasting":
+                    log_in_local_rank_0(
+                        "Backbone parameters frozen, only training forecasting output layers"
+                    )
+                else:
+                    log_in_local_rank_0(
+                        "Backbone parameters frozen, only training classification head"
+                    )
         else:
             raise ValueError("Model path is None")
 
         num_total_params = 0
+        num_trainable_params = 0
         for p in model.parameters():
-            num_total_params += reduce(mul, p.shape)
+            param_count = reduce(mul, p.shape)
+            num_total_params += param_count
+            if p.requires_grad:
+                num_trainable_params += param_count
 
         # print statistics info
         log_in_local_rank_0(train_config)
         log_in_local_rank_0(training_args)
         log_in_local_rank_0(model.config)
         log_in_local_rank_0(
-            f"Number of the model parameters: {length_to_str(num_total_params)}"
+            f"Number of total model parameters: {length_to_str(num_total_params)}"
         )
+        log_in_local_rank_0(
+            f"Number of trainable parameters: {length_to_str(num_trainable_params)}"
+        )
+        if num_trainable_params < num_total_params:
+            frozen_params = num_total_params - num_trainable_params
+            trainable_ratio = num_trainable_params / num_total_params * 100
+            log_in_local_rank_0(
+                f"Number of frozen parameters: {length_to_str(frozen_params)} "
+                f"(Training {trainable_ratio:.1f}% of total parameters)"
+            )
 
         if train_steps > 0:
             total_train_tokens = (

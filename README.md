@@ -253,11 +253,17 @@ python torch_dist_run.py main.py -d <data_path> --task_type token_classification
 
 **Additional Classification Arguments:**
 - `--classifier_dropout`: Dropout rate for classification head (default: 0.1)
-- `--freeze_backbone`: Freeze the Time-MoE backbone and only train the classification head (recommended for small datasets)
+- `--freeze_backbone`: Freeze the Time-MoE backbone and only train the task-specific head (recommended for small datasets or domain-specific fine-tuning)
 
 **Example with all arguments:**
 ```bash
 python torch_dist_run.py main.py -d <data_path> --task_type sequence_classification --num_classes 5 --classifier_dropout 0.2 --freeze_backbone
+```
+
+**Freeze Backbone for Forecasting:**
+The `--freeze_backbone` option is also available for forecasting tasks, useful for fine-tuning on domain-specific data:
+```bash
+python torch_dist_run.py main.py -d <data_path> --task_type forecasting --freeze_backbone --learning_rate 1e-3
 ```
 
 To train Time-MoE **from scratch**, simply include the `--from_scratch` argument in your command. Here's how it should look:

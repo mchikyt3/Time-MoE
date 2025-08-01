@@ -20,6 +20,11 @@ This folder contains example scripts and utilities for Time-MoE classification f
   - Shows how to use different training configurations
   - Includes model evaluation and saving
 
+### 🔧 Advanced Features
+- **`pooling_strategies_example.py`**: Examples of different pooling strategies for sequence classification
+  - Demonstrates various pooling methods (last_token, mean, max, attention, etc.)
+  - Shows how different strategies affect classification performance
+
 ### 🔮 Inference
 - **`inference_classification.py`**: Load trained models and make predictions
   - Load saved classification models
@@ -63,5 +68,19 @@ All classification scripts expect JSONL format:
 {"values": [1.2, 1.5, 1.8, ...], "labels": [0, 0, 1, ...]}
 {"values": [2.1, 2.3, 2.0, ...], "labels": [1, 1, 0, ...]}
 ```
+
+## Freeze Backbone Training
+
+The `--freeze_backbone` flag is available for all task types to reduce training time and memory usage:
+
+```bash
+# Classification with frozen backbone (recommended for small datasets)
+python ../main.py -d data.jsonl --task_type sequence_classification --num_classes 3 --freeze_backbone
+
+# Forecasting with frozen backbone (for domain adaptation)
+python ../main.py -d data.jsonl --task_type forecasting --freeze_backbone --learning_rate 1e-3
+```
+
+When enabled, only the task-specific heads are trained while the backbone remains frozen, typically training <10% of total parameters.
 
 For more details, see the main [Time-MoE README](../README.md#classification-fine-tuning).
