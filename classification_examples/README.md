@@ -25,11 +25,11 @@ This folder contains example scripts and utilities for Time-MoE classification f
   - Demonstrates various pooling methods (last_token, mean, max, attention, etc.)
   - Shows how different strategies affect classification performance
 
-### 🔮 Inference
-- **`inference_classification.py`**: Load trained models and make predictions
-  - Load saved classification models
-  - Perform inference on new time series data
-  - Export predictions in various formats
+### 🔮 Evaluation
+- Use the main **`run_eval.py`** script (in root directory) for evaluating classification models
+  - Supports both sequence and token classification evaluation
+  - Provides accuracy and F1 score metrics
+  - Unified evaluation framework for both forecasting and classification tasks
 
 ## Quick Start
 
@@ -48,9 +48,13 @@ This folder contains example scripts and utilities for Time-MoE classification f
    python prepare_classification_data.py --input your_data.csv --output formatted_data.jsonl --task_type sequence_classification
    ```
 
-4. **Perform inference:**
+4. **Evaluate classification models:**
    ```bash
-   python inference_classification.py --model_path ./trained_model --data_path test_data.jsonl
+   # Sequence classification
+   python ../run_eval.py --model path/to/model --data data.jsonl --task_type sequence_classification --num_classes 5
+   
+   # Token classification  
+   python ../run_eval.py --model path/to/model --data data.jsonl --task_type token_classification --num_classes 3
    ```
 
 ## Data Format

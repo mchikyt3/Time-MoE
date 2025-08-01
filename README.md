@@ -248,7 +248,7 @@ This will create `sample_data/sequence_classification.jsonl` and `sample_data/to
 
 **Additional Utilities:**
 - `classification_examples/prepare_classification_data.py` - Data preparation utilities and examples
-- `classification_examples/inference_classification.py` - Inference script for trained classification models
+- `run_eval.py` - Unified evaluation script for both forecasting and classification tasks
 
 **Training Commands**
 
@@ -319,6 +319,25 @@ python torch_dist_run.py main.py -d sample_data/sequence_classification.jsonl \
 **Example with all arguments:**
 ```bash
 python torch_dist_run.py main.py -d <data_path> --task_type sequence_classification --num_classes 5 --classifier_dropout 0.2 --freeze_backbone
+```
+
+**Evaluation Commands**
+
+After training, evaluate your models using the unified evaluation script:
+
+For **forecasting evaluation**:
+```bash
+python run_eval.py --model path/to/forecasting/model --data test_data.csv --task_type forecasting
+```
+
+For **sequence classification evaluation**:
+```bash
+python run_eval.py --model path/to/sequence/model --data test_data.jsonl --task_type sequence_classification --num_classes 5
+```
+
+For **token classification evaluation**:
+```bash
+python run_eval.py --model path/to/token/model --data test_data.jsonl --task_type token_classification --num_classes 3
 ```
 
 **Pooling Strategies for Sequence Classification**
