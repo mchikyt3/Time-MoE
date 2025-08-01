@@ -18,6 +18,15 @@ This directory contains test scripts for Time-MoE functionality.
   - Tests configuration validation
   - Tests data format validation
 
+- **`test_run_eval.py`**: Unit tests for evaluation functionality in `run_eval.py`
+  - Tests all metric classes (MSE, MAE, Accuracy, F1)
+  - Tests TimeMoE model initialization for all task types
+  - Tests model prediction methods for forecasting and classification
+  - Tests the main evaluate function with mocked components
+  - Tests distributed evaluation setup
+  - Tests argument parsing and validation logic
+  - Tests helper functions like `count_num_tensor_elements` and `setup_nccl`
+
 ## Running Tests
 
 ```bash
@@ -28,12 +37,19 @@ python test_freeze_backbone.py
 # Run all classification tests
 python test_classification.py
 
+# Run all evaluation tests
+python test_run_eval.py
+
 # Or from project root
 python tests/test_freeze_backbone.py
 python tests/test_classification.py
+python tests/test_run_eval.py
 
-# Run all tests
+# Run all tests with unittest
 python -m unittest discover tests/
+
+# Run with verbose output
+python -m unittest discover tests/ -v
 ```
 
 ## Test Requirements
