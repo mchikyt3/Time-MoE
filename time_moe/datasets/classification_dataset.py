@@ -25,8 +25,7 @@ def _check_dependencies() -> None:
     """Check if required dependencies are available."""
     if not HAS_DEPENDENCIES:
         raise ImportError(
-            "Required dependencies not found. Please install numpy:\n"
-            "pip install numpy"
+            "Required dependencies not found. Please install numpy:\npip install numpy"
         )
 
 
@@ -330,7 +329,7 @@ def create_token_classification_regime_jsonl(
     print(f"Created sophisticated token classification dataset: {output_path}")
     print(f"- Number of samples: {num_samples}")
     print(f"- Sequence length: {seq_length}")
-    print(f"- Classes: [1, 2, 3, 4] (Normal, Trending, Oscillating, Anomalous)")
+    print("- Classes: [1, 2, 3, 4] (Normal, Trending, Oscillating, Anomalous)")
 
 
 def generate_sample_datasets(
@@ -422,25 +421,7 @@ if __name__ == "__main__":
 
     try:
         generate_sample_datasets()
-        print()
         print("✅ Sample datasets generated successfully!")
-        print()
-        print("Usage examples:")
-        print("# Simple sequence classification:")
-        print("python main.py -d sample_data/simple_sequence_classification.jsonl \\")
-        print("  --task_type sequence_classification --num_classes 3")
-        print()
-        print("# Simple token classification:")
-        print("python main.py -d sample_data/simple_token_classification.jsonl \\")
-        print("  --task_type token_classification --num_classes 2")
-        print()
-        print("# Sophisticated sequence classification:")
-        print("python main.py -d sample_data/sequence_classification.jsonl \\")
-        print("  --task_type sequence_classification --num_classes 3")
-        print()
-        print("# Sophisticated token classification (regime detection):")
-        print("python main.py -d sample_data/token_classification.jsonl \\")
-        print("  --task_type token_classification --num_classes 5")
 
     except Exception as e:
         print(f"❌ Error: {e}")
