@@ -223,7 +223,7 @@ python torch_dist_run.py main.py -d <data_path>
 
 Time-MoE supports both **sequence classification** (assigning a single label to the entire time series) and **token classification** (assigning labels to each time step). The data format remains the same as forecasting, with an additional `label` field.
 
-> 📁 **See [`classification_examples/`](classification_examples/) for complete examples, data preparation scripts, and inference utilities.**
+> 📁 **Classification data generation utilities are available in `time_moe/datasets/classification_dataset.py` with functions for creating sample datasets and converting data formats.**
 
 **Sequence Classification Data Format**
 For sequence classification, each time series gets one label:
@@ -242,12 +242,29 @@ For token classification, each time step gets a label:
 **Generate Sample Data**
 To create sample classification datasets for testing:
 ```bash
-python classification_examples/create_sample_classification_data.py
+python -m time_moe.datasets.classification_dataset
 ```
-This will create `sample_data/sequence_classification.jsonl` and `sample_data/token_classification.jsonl` with synthetic data for testing.
+This will create `sample_data/` directory with both JSONL and JSON format datasets for testing.
+
+**Programmatic Data Generation**
+You can also generate classification data programmatically:
+```python
+from time_moe.datasets import (
+    create_sequence_classification_data,
+    create_token_classification_data,
+    generate_sample_datasets
+)
+
+# Generate specific dataset types
+create_sequence_classification_data("my_seq_data.jsonl", num_samples=100, num_classes=3)
+create_token_classification_data("my_token_data.jsonl", num_samples=50, num_classes=2)
+
+# Or generate a complete collection
+generate_sample_datasets(output_dir="my_classification_data")
+```
 
 **Additional Utilities:**
-- `classification_examples/prepare_classification_data.py` - Data preparation utilities and examples
+- `time_moe.datasets.classification_dataset` - Consolidated classification data generation module
 - `run_eval.py` - Unified evaluation script for both forecasting and classification tasks
 
 **Training Commands**

@@ -70,18 +70,18 @@ class F1Metric(SumEvalMetric):
     def _calculate(self, preds, labels, **kwargs):
         if len(preds.shape) > 1:
             preds = torch.argmax(preds, dim=-1)
-        
+
         # Flatten for token classification
         preds = preds.flatten()
         labels = labels.flatten()
-        
+
         for c in range(self.num_classes):
             self.true_positives[c] += ((preds == c) & (labels == c)).sum()
             self.predicted_positives[c] += (preds == c).sum()
             self.actual_positives[c] += (labels == c).sum()
-        
+
         return 0  # F1 calculated in get_f1_score method
-    
+
     def get_f1_score(self):
         precision = self.true_positives / (self.predicted_positives + 1e-8)
         recall = self.true_positives / (self.actual_positives + 1e-8)
@@ -90,12 +90,21 @@ class F1Metric(SumEvalMetric):
 
 
 class TimeMoE:
-    def __init__(self, model_path, device, task_type="forecasting", context_length=None, prediction_length=None, **kwargs):
+    def __init__(
+        self,
+        model_path,
+        device,
+        task_type="forecasting",
+        context_length=None,
+        prediction_length=None,
+        **kwargs,
+    ):
         self.task_type = task_type
-        
+
         if task_type == "forecasting":
             try:
                 from time_moe.models.modeling_time_moe import TimeMoeForPrediction
+
                 model = TimeMoeForPrediction.from_pretrained(
                     model_path,
                     device_map=device,
@@ -111,7 +120,10 @@ class TimeMoE:
                     trust_remote_code=True,
                 )
         elif task_type == "sequence_classification":
-            from time_moe.models.modeling_time_moe import TimeMoeForSequenceClassification
+            from time_moe.models.modeling_time_moe import (
+                TimeMoeForSequenceClassification,
+            )
+
             model = TimeMoeForSequenceClassification.from_pretrained(
                 model_path,
                 device_map=device,
@@ -119,6 +131,7 @@ class TimeMoE:
             )
         elif task_type == "token_classification":
             from time_moe.models.modeling_time_moe import TimeMoeForTokenClassification
+
             model = TimeMoeForTokenClassification.from_pretrained(
                 model_path,
                 device_map=device,
@@ -139,7 +152,7 @@ class TimeMoE:
     def predict(self, batch):
         model = self.model
         device = self.device
-        
+
         if self.task_type == "forecasting":
             prediction_length = self.prediction_length
             outputs = model.generate(
@@ -153,11 +166,11 @@ class TimeMoE:
         else:  # classification tasks
             inputs = batch["inputs"].to(device).to(model.dtype)
             labels = batch["labels"].to(device)
-            
+
             with torch.no_grad():
                 outputs = model(input_ids=inputs)
                 preds = outputs.logits
-                
+
         return preds, labels
 
 
@@ -267,12 +280,14 @@ def evaluate(args):
             "data": args.data,
             "task_type": args.task_type,
         }
-        
+
         if args.task_type == "forecasting":
-            item.update({
-                "context_length": args.context_length,
-                "prediction_length": args.prediction_length,
-            })
+            item.update(
+                {
+                    "context_length": args.context_length,
+                    "prediction_length": args.prediction_length,
+                }
+            )
         elif args.num_classes:
             item["num_classes"] = args.num_classes
 
@@ -283,7 +298,9 @@ def evaluate(args):
                 val = metric.get_f1_score()
             else:
                 val = all_stat[i] / count
-            item[metric.name] = float(val.cpu().numpy()) if hasattr(val, 'cpu') else float(val)
+            item[metric.name] = (
+                float(val.cpu().numpy()) if hasattr(val, "cpu") else float(val)
+            )
         logging.info(item)
 
 
@@ -314,14 +331,21 @@ if __name__ == "__main__":
     )
     parser.add_argument("--context_length", "-c", type=int, help="Context length")
     parser.add_argument(
-        "--prediction_length", "-p", type=int, default=96, help="Prediction length (for forecasting tasks)"
+        "--prediction_length",
+        "-p",
+        type=int,
+        default=96,
+        help="Prediction length (for forecasting tasks)",
     )
     args = parser.parse_args()
-    
+
     # Validation
-    if args.task_type in ["sequence_classification", "token_classification"] and args.num_classes is None:
+    if (
+        args.task_type in ["sequence_classification", "token_classification"]
+        and args.num_classes is None
+    ):
         parser.error(f"--num_classes is required for {args.task_type}")
-    
+
     if args.context_length is None:
         if args.task_type == "forecasting":
             if args.prediction_length == 96:
@@ -337,5 +361,5 @@ if __name__ == "__main__":
         else:
             # For classification tasks, use a reasonable default
             args.context_length = 1024
-    
+
     evaluate(args)
