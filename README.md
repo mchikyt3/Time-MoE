@@ -32,7 +32,8 @@
 
 ## TODO List
 - [ ] Add covariate support
-- [x] Enable fine-tuning of Time-MoE for forecasting with dynamic features and support time series classification
+- [ ] Enable fine-tuning of Time-MoE for forecasting with dynamic features
+- [x] Support time series classification (sequence and token classification)
 
 ## Updates/News:
 
