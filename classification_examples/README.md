@@ -59,14 +59,14 @@ All classification scripts expect JSONL format:
 
 **Sequence Classification (one label per series):**
 ```json
-{"values": [1.2, 1.5, 1.8, ...], "label": 0}
-{"values": [2.1, 2.3, 2.0, ...], "label": 1}
+{"sequence": [1.2, 1.5, 1.8, ...], "label": 0}
+{"sequence": [2.1, 2.3, 2.0, ...], "label": 1}
 ```
 
 **Token Classification (one label per timestep):**
 ```json
-{"values": [1.2, 1.5, 1.8, ...], "labels": [0, 0, 1, ...]}
-{"values": [2.1, 2.3, 2.0, ...], "labels": [1, 1, 0, ...]}
+{"sequence": [1.2, 1.5, 1.8, ...], "label": [0, 0, 1, ...]}
+{"sequence": [2.1, 2.3, 2.0, ...], "label": [1, 1, 0, ...]}
 ```
 
 ## Freeze Backbone Training

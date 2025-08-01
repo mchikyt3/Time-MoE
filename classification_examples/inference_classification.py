@@ -10,7 +10,7 @@ from typing import List, Union
 import numpy as np
 import torch
 
-from time_moe.models.modeling_time_moe_classification import (
+from time_moe.models.modeling_time_moe import (
     TimeMoeForSequenceClassification,
     TimeMoeForTokenClassification,
 )
@@ -187,17 +187,32 @@ def main():
 
     # Load input data
     print(f"Loading input data from {args.input_data}...")
-    with open(args.input_data) as f:
-        input_data = json.load(f)
+    
+    # Try to detect file format
+    if args.input_data.endswith('.jsonl'):
+        # JSONL format
+        input_data = []
+        with open(args.input_data) as f:
+            for line in f:
+                if line.strip():
+                    input_data.append(json.loads(line))
+    else:
+        # JSON format
+        with open(args.input_data) as f:
+            input_data = json.load(f)
 
     # Handle different input formats
-    if isinstance(input_data, dict) and "timeseries" in input_data:
+    if isinstance(input_data, dict) and ("sequence" in input_data or "timeseries" in input_data):
         # Single sample
-        timeseries_data = [input_data["timeseries"]]
+        key = "sequence" if "sequence" in input_data else "timeseries"
+        timeseries_data = [input_data[key]]
     elif isinstance(input_data, list):
-        if all("timeseries" in item for item in input_data):
+        if all(("sequence" in item or "timeseries" in item) for item in input_data):
             # List of samples with metadata
-            timeseries_data = [item["timeseries"] for item in input_data]
+            timeseries_data = []
+            for item in input_data:
+                key = "sequence" if "sequence" in item else "timeseries"
+                timeseries_data.append(item[key])
         else:
             # List of raw time series
             timeseries_data = input_data

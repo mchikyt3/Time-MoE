@@ -99,8 +99,8 @@ if __name__ == "__main__":
     print("\nSample datasets created successfully!")
     print("You can now test classification fine-tuning with:")
     print(
-        "python main.py -d sample_data/sequence_classification.jsonl --task_type sequence_classification --num_classes 3 --micro_batch_size 2 --train_steps 10"
+        "python main.py -d sample_data/sequence_classification.jsonl --task_type sequence_classification --num_classes 3 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
     )
     print(
-        "python main.py -d sample_data/token_classification.jsonl --task_type token_classification --num_classes 2 --micro_batch_size 2 --train_steps 10"
+        "python main.py -d sample_data/token_classification.jsonl --task_type token_classification --num_classes 2 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
     )
