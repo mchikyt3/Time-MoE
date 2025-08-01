@@ -15,7 +15,6 @@ from typing import Optional
 
 try:
     import numpy as np
-    from sklearn.model_selection import train_test_split
 
     HAS_DEPENDENCIES = True
 except ImportError:
@@ -26,8 +25,8 @@ def _check_dependencies() -> None:
     """Check if required dependencies are available."""
     if not HAS_DEPENDENCIES:
         raise ImportError(
-            "Required dependencies not found. Please install numpy and scikit-learn:\n"
-            "pip install numpy scikit-learn"
+            "Required dependencies not found. Please install numpy:\n"
+            "pip install numpy"
         )
 
 
@@ -171,221 +170,177 @@ def create_token_classification_data(
     print(f"- Number of classes: {num_classes}")
 
 
-def create_time_series_classification_data(
+def create_sequence_classification_jsonl(
+    output_path: str = "sequence_classification.jsonl",
     num_samples: int = 1000,
     seq_length: int = 128,
-    n_features: int = 1,
     n_classes: int = 3,
     seed: Optional[int] = 42,
-) -> tuple[list[dict], list[dict]]:
+) -> None:
     """
-    Create sample time series classification data in the expected JSON format.
+    Create sample time series sequence classification data in JSONL format.
 
-    This function creates more sophisticated time series patterns compared to
-    the simpler JSONL format functions above.
+    This function creates more sophisticated time series patterns with different
+    regimes for each class.
 
     Parameters
     ----------
+    output_path : str
+        Path to save the generated JSONL data
     num_samples : int
         Total number of samples to generate
     seq_length : int
         Length of each time series sequence
-    n_features : int
-        Number of features per timestep
     n_classes : int
         Number of classification classes
     seed : int, optional
         Random seed for reproducibility
-
-    Returns
-    -------
-    tuple: (train_data, val_data) as lists of dictionaries
     """
     _check_dependencies()
 
     if seed is not None:
         np.random.seed(seed)
 
-    data = []
-
-    for i in range(num_samples):
-        # Create different patterns for different classes
-        class_label = i % n_classes
-
-        if class_label == 0:
-            # Sine wave pattern
-            t = np.linspace(0, 4 * np.pi, seq_length)
-            timeseries = np.sin(t) + 0.1 * np.random.randn(seq_length)
-        elif class_label == 1:
-            # Linear trend pattern
-            timeseries = np.linspace(0, 2, seq_length) + 0.1 * np.random.randn(
-                seq_length
-            )
-        elif class_label == 2:
-            # Random walk pattern
-            timeseries = np.cumsum(0.1 * np.random.randn(seq_length))
-        # Additional patterns for more classes
-        elif class_label == 3:
-            # Exponential decay
-            t = np.linspace(0, 3, seq_length)
-            timeseries = np.exp(-t) + 0.1 * np.random.randn(seq_length)
-        else:
-            # Polynomial pattern
-            t = np.linspace(-1, 1, seq_length)
-            timeseries = t**3 + 0.1 * np.random.randn(seq_length)
-
-        # Normalize
-        timeseries = (timeseries - timeseries.mean()) / (timeseries.std() + 1e-8)
-
-        # Convert to required format: [seq_len, n_features]
-        if n_features == 1:
-            timeseries = timeseries.reshape(-1, 1)
-        else:
-            # For multivariate, replicate and add noise
-            timeseries = np.column_stack(
-                [
-                    timeseries + 0.05 * np.random.randn(seq_length)
-                    for _ in range(n_features)
-                ]
-            )
-
-        sample = {"timeseries": timeseries.tolist(), "label": class_label}
-        data.append(sample)
-
-    # Split into train and validation
-    train_data, val_data = train_test_split(
-        data, test_size=0.2, random_state=seed, stratify=[d["label"] for d in data]
+    # Create output directory if it doesn't exist
+    os.makedirs(
+        os.path.dirname(output_path) if os.path.dirname(output_path) else ".",
+        exist_ok=True,
     )
 
-    return train_data, val_data
+    with open(output_path, "w") as f:
+        for i in range(num_samples):
+            # Create different patterns for different classes
+            class_label = i % n_classes
+
+            if class_label == 0:
+                # Sine wave pattern
+                t = np.linspace(0, 4 * np.pi, seq_length)
+                timeseries = np.sin(t) + 0.1 * np.random.randn(seq_length)
+            elif class_label == 1:
+                # Linear trend pattern
+                timeseries = np.linspace(0, 2, seq_length) + 0.1 * np.random.randn(
+                    seq_length
+                )
+            elif class_label == 2:
+                # Random walk pattern
+                timeseries = np.cumsum(0.1 * np.random.randn(seq_length))
+            # Additional patterns for more classes
+            elif class_label == 3:
+                # Exponential decay
+                t = np.linspace(0, 3, seq_length)
+                timeseries = np.exp(-t) + 0.1 * np.random.randn(seq_length)
+            else:
+                # Polynomial pattern
+                t = np.linspace(-1, 1, seq_length)
+                timeseries = t**3 + 0.1 * np.random.randn(seq_length)
+
+            # Normalize
+            timeseries = (timeseries - timeseries.mean()) / (timeseries.std() + 1e-8)
+
+            sample = {"sequence": timeseries.tolist(), "label": class_label}
+            f.write(json.dumps(sample) + "\n")
+
+    print(f"Created sophisticated sequence classification dataset: {output_path}")
+    print(f"- Number of samples: {num_samples}")
+    print(f"- Sequence length: {seq_length}")
+    print(f"- Number of classes: {n_classes}")
 
 
-def create_token_classification_regime_data(
+def create_token_classification_regime_jsonl(
+    output_path: str = "token_classification.jsonl",
     num_samples: int = 500,
     seq_length: int = 128,
-    n_features: int = 1,
     seed: Optional[int] = 42,
-) -> tuple[list[dict], list[dict]]:
+) -> None:
     """
-    Create sample time series token classification data for regime detection.
+    Create sample time series token classification data for regime detection in JSONL format.
 
     Each timestep gets a label indicating the current regime.
 
     Parameters
     ----------
+    output_path : str
+        Path to save the generated JSONL data
     num_samples : int
         Number of samples to generate
     seq_length : int
         Length of each time series sequence
-    n_features : int
-        Number of features per timestep
     seed : int, optional
         Random seed for reproducibility
-
-    Returns
-    -------
-    tuple: (train_data, val_data) as lists of dictionaries
     """
     _check_dependencies()
 
     if seed is not None:
         np.random.seed(seed)
 
-    data = []
-
-    for i in range(num_samples):
-        # Create time series with different regimes
-        timeseries = []
-        labels = []
-
-        # Divide sequence into segments with different patterns
-        segment_length = seq_length // 4
-
-        for segment in range(4):
-            start_idx = segment * segment_length
-            end_idx = min(start_idx + segment_length, seq_length)
-            length = end_idx - start_idx
-
-            if segment == 0:
-                # Normal regime (label 1)
-                segment_data = 0.1 * np.random.randn(length)
-                segment_labels = [1] * length
-            elif segment == 1:
-                # Trending regime (label 2)
-                segment_data = np.linspace(0, 1, length) + 0.05 * np.random.randn(
-                    length
-                )
-                segment_labels = [2] * length
-            elif segment == 2:
-                # Oscillating regime (label 3)
-                t = np.linspace(0, 2 * np.pi, length)
-                segment_data = np.sin(t) + 0.05 * np.random.randn(length)
-                segment_labels = [3] * length
-            else:
-                # Anomalous regime (label 4)
-                segment_data = 2 + 0.3 * np.random.randn(length)
-                segment_labels = [4] * length
-
-            timeseries.extend(segment_data.tolist())
-            labels.extend(segment_labels)
-
-        # Ensure exact length
-        timeseries = timeseries[:seq_length]
-        labels = labels[:seq_length]
-
-        # Normalize timeseries
-        timeseries = np.array(timeseries)
-        timeseries = (timeseries - timeseries.mean()) / (timeseries.std() + 1e-8)
-
-        # Convert to required format
-        if n_features == 1:
-            timeseries = timeseries.reshape(-1, 1)
-        else:
-            # For multivariate, replicate and add noise
-            timeseries = np.column_stack(
-                [
-                    timeseries + 0.05 * np.random.randn(seq_length)
-                    for _ in range(n_features)
-                ]
-            )
-
-        sample = {"timeseries": timeseries.tolist(), "label": labels}
-        data.append(sample)
-
-    # Split into train and validation
-    train_data, val_data = train_test_split(data, test_size=0.2, random_state=seed)
-
-    return train_data, val_data
-
-
-def save_classification_data(data: list[dict], filename: str) -> None:
-    """
-    Save classification data to JSON file.
-
-    Parameters
-    ----------
-    data : list
-        List of data samples
-    filename : str
-        Output filename
-    """
+    # Create output directory if it doesn't exist
     os.makedirs(
-        os.path.dirname(filename) if os.path.dirname(filename) else ".", exist_ok=True
+        os.path.dirname(output_path) if os.path.dirname(output_path) else ".",
+        exist_ok=True,
     )
 
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=2)
-    print(f"Saved {len(data)} samples to {filename}")
+    with open(output_path, "w") as f:
+        for i in range(num_samples):
+            # Create time series with different regimes
+            timeseries = []
+            labels = []
+
+            # Divide sequence into segments with different patterns
+            segment_length = seq_length // 4
+
+            for segment in range(4):
+                start_idx = segment * segment_length
+                end_idx = min(start_idx + segment_length, seq_length)
+                length = end_idx - start_idx
+
+                if segment == 0:
+                    # Normal regime (label 1)
+                    segment_data = 0.1 * np.random.randn(length)
+                    segment_labels = [1] * length
+                elif segment == 1:
+                    # Trending regime (label 2)
+                    segment_data = np.linspace(0, 1, length) + 0.05 * np.random.randn(
+                        length
+                    )
+                    segment_labels = [2] * length
+                elif segment == 2:
+                    # Oscillating regime (label 3)
+                    t = np.linspace(0, 2 * np.pi, length)
+                    segment_data = np.sin(t) + 0.05 * np.random.randn(length)
+                    segment_labels = [3] * length
+                else:
+                    # Anomalous regime (label 4)
+                    segment_data = 2 + 0.3 * np.random.randn(length)
+                    segment_labels = [4] * length
+
+                timeseries.extend(segment_data.tolist())
+                labels.extend(segment_labels)
+
+            # Ensure exact length
+            timeseries = timeseries[:seq_length]
+            labels = labels[:seq_length]
+
+            # Normalize timeseries
+            timeseries = np.array(timeseries)
+            timeseries = (timeseries - timeseries.mean()) / (timeseries.std() + 1e-8)
+
+            sample = {"sequence": timeseries.tolist(), "label": labels}
+            f.write(json.dumps(sample) + "\n")
+
+    print(f"Created sophisticated token classification dataset: {output_path}")
+    print(f"- Number of samples: {num_samples}")
+    print(f"- Sequence length: {seq_length}")
+    print(f"- Classes: [1, 2, 3, 4] (Normal, Trending, Oscillating, Anomalous)")
 
 
 def generate_sample_datasets(
     output_dir: str = "sample_data", seed: Optional[int] = 42
 ) -> None:
     """
-    Generate a complete set of sample classification datasets.
+    Generate a complete set of sample classification datasets in JSONL format.
 
-    This function creates both JSONL and JSON format datasets for testing
-    different classification scenarios.
+    This function creates JSONL format datasets for testing different
+    classification scenarios.
 
     Parameters
     ----------
@@ -401,83 +356,62 @@ def generate_sample_datasets(
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
-    # Generate JSONL format datasets (simpler format)
-    print("\n1. Creating JSONL format datasets...")
+    # Generate JSONL format datasets
+    print("\nCreating JSONL format datasets...")
 
+    # Simple sequence classification
     create_sequence_classification_data(
-        output_path=os.path.join(output_dir, "sequence_classification.jsonl"),
+        output_path=os.path.join(output_dir, "simple_sequence_classification.jsonl"),
         num_samples=200,
         seq_length=512,
         num_classes=3,
         seed=seed,
     )
 
+    # Simple token classification
     create_token_classification_data(
-        output_path=os.path.join(output_dir, "token_classification.jsonl"),
+        output_path=os.path.join(output_dir, "simple_token_classification.jsonl"),
         num_samples=100,
         seq_length=256,
         num_classes=2,
         seed=seed,
     )
 
-    # Generate JSON format datasets (more sophisticated)
-    print("\n2. Creating JSON format datasets...")
-
-    # Sequence classification
-    train_seq, val_seq = create_time_series_classification_data(
-        num_samples=1000, seq_length=128, n_features=1, n_classes=3, seed=seed
-    )
-    save_classification_data(
-        train_seq, os.path.join(output_dir, "train_sequence_classification.json")
-    )
-    save_classification_data(
-        val_seq, os.path.join(output_dir, "val_sequence_classification.json")
+    # Sophisticated sequence classification
+    create_sequence_classification_jsonl(
+        output_path=os.path.join(output_dir, "sequence_classification.jsonl"),
+        num_samples=1000,
+        seq_length=128,
+        n_classes=3,
+        seed=seed,
     )
 
-    print(
-        f"Sequence classification: {len(train_seq)} train, {len(val_seq)} val samples"
+    # Sophisticated token classification (regime detection)
+    create_token_classification_regime_jsonl(
+        output_path=os.path.join(output_dir, "token_classification.jsonl"),
+        num_samples=500,
+        seq_length=128,
+        seed=seed,
     )
-    print(f"Classes: {set(d['label'] for d in train_seq)}")
-    print(f"Sample timeseries shape: {np.array(train_seq[0]['timeseries']).shape}")
-
-    # Token classification
-    train_tok, val_tok = create_token_classification_regime_data(
-        num_samples=500, seq_length=128, n_features=1, seed=seed
-    )
-    save_classification_data(
-        train_tok, os.path.join(output_dir, "train_token_classification.json")
-    )
-    save_classification_data(
-        val_tok, os.path.join(output_dir, "val_token_classification.json")
-    )
-
-    print(f"Token classification: {len(train_tok)} train, {len(val_tok)} val samples")
-    print(f"Classes: {set().union(*[d['label'] for d in train_tok])}")
-    print(f"Sample timeseries shape: {np.array(train_tok[0]['timeseries']).shape}")
-    print(f"Sample labels length: {len(train_tok[0]['label'])}")
 
     print(f"\nAll datasets saved to: {output_dir}")
     print("\nSample usage commands:")
-    print("\n# JSONL format (simpler):")
+    print("\n# Simple sequence classification:")
+    print(
+        f"python main.py -d {output_dir}/simple_sequence_classification.jsonl --task_type sequence_classification --num_classes 3 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
+    )
+    print("\n# Simple token classification:")
+    print(
+        f"python main.py -d {output_dir}/simple_token_classification.jsonl --task_type token_classification --num_classes 2 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
+    )
+    print("\n# Sophisticated sequence classification:")
     print(
         f"python main.py -d {output_dir}/sequence_classification.jsonl --task_type sequence_classification --num_classes 3 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
     )
+    print("\n# Sophisticated token classification (regime detection):")
     print(
-        f"python main.py -d {output_dir}/token_classification.jsonl --task_type token_classification --num_classes 2 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
+        f"python main.py -d {output_dir}/token_classification.jsonl --task_type token_classification --num_classes 5 --micro_batch_size 2 --train_steps 10 --attn_implementation eager --precision bf16"
     )
-
-    print("\n# JSON format (with train/val split):")
-    print("# Sequence Classification:")
-    print("python finetune_classification.py \\")
-    print("  --model_path Maple728/TimeMoE-50M \\")
-    print("  --task_type sequence \\")
-    print("  --num_classes 3 \\")
-    print(f"  --train_data {output_dir}/train_sequence_classification.json \\")
-    print(f"  --eval_data {output_dir}/val_sequence_classification.json \\")
-    print("  --output_dir ./sequence_classification_output \\")
-    print("  --num_epochs 5 \\")
-    print("  --batch_size 16 \\")
-    print("  --learning_rate 2e-5")
 
 
 if __name__ == "__main__":
@@ -492,16 +426,24 @@ if __name__ == "__main__":
         print("✅ Sample datasets generated successfully!")
         print()
         print("Usage examples:")
-        print("# Sequence classification:")
+        print("# Simple sequence classification:")
+        print("python main.py -d sample_data/simple_sequence_classification.jsonl \\")
+        print("  --task_type sequence_classification --num_classes 3")
+        print()
+        print("# Simple token classification:")
+        print("python main.py -d sample_data/simple_token_classification.jsonl \\")
+        print("  --task_type token_classification --num_classes 2")
+        print()
+        print("# Sophisticated sequence classification:")
         print("python main.py -d sample_data/sequence_classification.jsonl \\")
         print("  --task_type sequence_classification --num_classes 3")
         print()
-        print("# Token classification:")
+        print("# Sophisticated token classification (regime detection):")
         print("python main.py -d sample_data/token_classification.jsonl \\")
-        print("  --task_type token_classification --num_classes 2")
+        print("  --task_type token_classification --num_classes 5")
 
     except Exception as e:
         print(f"❌ Error: {e}")
         print()
         print("Make sure you have the required dependencies installed:")
-        print("pip install numpy scikit-learn")
+        print("pip install numpy")
