@@ -3,8 +3,8 @@
 Unit tests to verify freeze_backbone functionality for all task types.
 """
 
-import unittest
 import sys
+import unittest
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -16,6 +16,7 @@ try:
         TimeMoeForPrediction,
         TimeMoeForSequenceClassification,
     )
+
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
     DEPENDENCIES_AVAILABLE = False
@@ -53,8 +54,11 @@ class TestFreezeBackbone(unittest.TestCase):
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-        self.assertEqual(total_params, trainable_params,
-                        "All parameters should be trainable initially")
+        self.assertEqual(
+            total_params,
+            trainable_params,
+            "All parameters should be trainable initially",
+        )
 
         # Freeze backbone (model.model contains the TimeMoeModel backbone)
         for param in model.model.parameters():
@@ -66,9 +70,14 @@ class TestFreezeBackbone(unittest.TestCase):
         output_layer_params = sum(p.numel() for p in model.lm_heads.parameters())
 
         # Verify that only output layers are trainable
-        self.assertEqual(trainable_after, output_layer_params,
-                        f"Only output layers should be trainable, got {trainable_after} vs {output_layer_params}")
-        self.assertLess(trainable_after, total_params, "Some parameters should be frozen")
+        self.assertEqual(
+            trainable_after,
+            output_layer_params,
+            f"Only output layers should be trainable, got {trainable_after} vs {output_layer_params}",
+        )
+        self.assertLess(
+            trainable_after, total_params, "Some parameters should be frozen"
+        )
 
     def test_freeze_backbone_classification(self):
         """Test that freeze_backbone works for classification models."""
@@ -93,8 +102,11 @@ class TestFreezeBackbone(unittest.TestCase):
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-        self.assertEqual(total_params, trainable_params,
-                        "All parameters should be trainable initially")
+        self.assertEqual(
+            total_params,
+            trainable_params,
+            "All parameters should be trainable initially",
+        )
 
         # Freeze backbone (model.model contains the TimeMoeModel backbone)
         for param in model.model.parameters():
@@ -107,9 +119,14 @@ class TestFreezeBackbone(unittest.TestCase):
         )
 
         # Verify that only classification head is trainable
-        self.assertEqual(trainable_after, classification_head_params,
-                        f"Only classification head should be trainable, got {trainable_after} vs {classification_head_params}")
-        self.assertLess(trainable_after, total_params, "Some parameters should be frozen")
+        self.assertEqual(
+            trainable_after,
+            classification_head_params,
+            f"Only classification head should be trainable, got {trainable_after} vs {classification_head_params}",
+        )
+        self.assertLess(
+            trainable_after, total_params, "Some parameters should be frozen"
+        )
 
     def test_parameter_ratio(self):
         """Test that backbone contains most parameters, validating our freeze approach."""
@@ -130,7 +147,9 @@ class TestFreezeBackbone(unittest.TestCase):
         # Test forecasting model
         forecasting_model = TimeMoeForPrediction(config)
         total_forecasting = sum(p.numel() for p in forecasting_model.parameters())
-        backbone_forecasting = sum(p.numel() for p in forecasting_model.model.parameters())
+        backbone_forecasting = sum(
+            p.numel() for p in forecasting_model.model.parameters()
+        )
 
         backbone_ratio_forecasting = backbone_forecasting / total_forecasting * 100
 
@@ -141,18 +160,26 @@ class TestFreezeBackbone(unittest.TestCase):
             p.numel() for p in classification_model.model.parameters()
         )
 
-        backbone_ratio_classification = backbone_classification / total_classification * 100
+        backbone_ratio_classification = (
+            backbone_classification / total_classification * 100
+        )
 
         # Backbone should be the majority of parameters
         min_backbone_percentage = 80
-        self.assertGreater(backbone_ratio_forecasting, min_backbone_percentage,
-                          f"Backbone should be >{min_backbone_percentage}% of parameters in forecasting, "
-                          f"got {backbone_ratio_forecasting:.1f}%")
-        self.assertGreater(backbone_ratio_classification, min_backbone_percentage,
-                          f"Backbone should be >{min_backbone_percentage}% of parameters in classification, "
-                          f"got {backbone_ratio_classification:.1f}%")
+        self.assertGreater(
+            backbone_ratio_forecasting,
+            min_backbone_percentage,
+            f"Backbone should be >{min_backbone_percentage}% of parameters in forecasting, "
+            f"got {backbone_ratio_forecasting:.1f}%",
+        )
+        self.assertGreater(
+            backbone_ratio_classification,
+            min_backbone_percentage,
+            f"Backbone should be >{min_backbone_percentage}% of parameters in classification, "
+            f"got {backbone_ratio_classification:.1f}%",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Configure test runner
     unittest.main(verbosity=2, buffer=True)
