@@ -33,7 +33,7 @@ class TimeMoeRunner:
     def load_model(
         self,
         model_path: str = None,
-        from_scatch: bool = False,
+        from_scratch: bool = False,
         task_type: str = "forecasting",
         num_classes: int = None,
         classifier_dropout: float = 0.1,
@@ -82,7 +82,7 @@ class TimeMoeRunner:
         else:  # forecasting or default
             model_class = TimeMoeForPrediction
 
-        if from_scatch:
+        if from_scratch:
             config = TimeMoeConfig.from_pretrained(
                 model_path, _attn_implementation=attn
             )
@@ -233,7 +233,7 @@ class TimeMoeRunner:
         if model_path is not None:
             model = self.load_model(
                 model_path=model_path,
-                from_scatch=from_scratch,
+                from_scratch=from_scratch,
                 torch_dtype=torch_dtype,
                 attn_implementation=train_config.get("attn_implementation", "eager"),
                 task_type=train_config.get("task_type", "forecasting"),
