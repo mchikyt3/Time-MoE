@@ -184,25 +184,13 @@ class TestTimeMoeRunner(unittest.TestCase):
         time_moe.utils.dist_util.get_world_size = lambda: 2
 
         try:
-            # Test with global_batch_size only
-            with self.assertRaises(
-                SystemExit
-            ):  # Will fail due to missing other args, but that's expected
-                try:
-                    runner.train_model(global_batch_size=16)
-                except (ValueError, FileNotFoundError, TypeError) as e:
-                    # These are expected since we're not providing a complete training setup
-                    pass
+            # Test with global_batch_size only - should fail due to missing model_path
+            with self.assertRaises(ValueError, msg="Model path is None"):
+                runner.train_model(global_batch_size=16, normalization_method="min_max")
 
             # Test with micro_batch_size only
-            with self.assertRaises(
-                SystemExit
-            ):  # Will fail due to missing other args, but that's expected
-                try:
-                    runner.train_model(micro_batch_size=4)
-                except (ValueError, FileNotFoundError, TypeError) as e:
-                    # These are expected since we're not providing a complete training setup
-                    pass
+            with self.assertRaises(ValueError):  # Will fail due to missing model_path
+                runner.train_model(micro_batch_size=4, normalization_method="min_max")
 
             # Test with neither (should raise ValueError)
             with self.assertRaises(ValueError):

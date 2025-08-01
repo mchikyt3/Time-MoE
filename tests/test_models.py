@@ -81,19 +81,24 @@ class TestTimeMoeComponents(unittest.TestCase):
         output = rms_norm(input_data)
 
         self.assertEqual(output.shape, input_data.shape)
-        # Test that the norm is approximately 1 (within tolerance)
-        output_norm = torch.norm(output, dim=-1).mean()
-        self.assertAlmostEqual(output_norm.item(), 1.0, places=1)
+        # Test that the variance is approximately 1 (for RMS norm)
+        variance = output.pow(2).mean(-1)
+        # RMS norm should produce vectors with normalized variance
+        self.assertTrue(torch.allclose(variance, torch.ones_like(variance), atol=1e-3))
 
     def test_mlp(self):
         """Test TimeMoeMLP component."""
-        mlp = TimeMoeMLP(self.config)
+        mlp = TimeMoeMLP(
+            hidden_size=self.config.hidden_size,
+            intermediate_size=self.config.intermediate_size,
+            hidden_act=self.config.hidden_act,
+        )
 
         # Test forward pass
         batch_size, seq_len = 2, 10
         input_data = torch.randn(batch_size, seq_len, self.config.hidden_size)
 
-        output = mlp(input_data)
+        output, aux_loss = mlp(input_data)
 
         self.assertEqual(output.shape, input_data.shape)
 
@@ -137,7 +142,11 @@ class TestTimeMoeComponents(unittest.TestCase):
             hidden_size=32, num_classes=5, classifier_dropout=0.1
         )
 
-        classification_head = TimeMoeClassificationHead(config_with_classes)
+        classification_head = TimeMoeClassificationHead(
+            hidden_size=config_with_classes.hidden_size,
+            num_classes=config_with_classes.num_classes,
+            dropout=config_with_classes.classifier_dropout,
+        )
 
         # Test forward pass
         batch_size, seq_len = 2, 10
@@ -178,7 +187,7 @@ class TestTimeMoeModels(unittest.TestCase):
 
         # Test forward pass
         batch_size, seq_len = 2, 8
-        input_ids = torch.randn(batch_size, seq_len, self.config.hidden_size)
+        input_ids = torch.randn(batch_size, seq_len, self.config.input_size)
 
         outputs = model(input_ids=input_ids)
 

@@ -74,6 +74,7 @@ def load_balancing_loss_func(
     if (
         gate_logits is None
         or not isinstance(gate_logits, (tuple, list))
+        or len(gate_logits) == 0
         or gate_logits[0] is None
     ):
         return 0.0

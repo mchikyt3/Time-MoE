@@ -81,7 +81,8 @@ class TestGeneralDataset(unittest.TestCase):
     def test_npy_file_loading(self):
         """Test loading from numpy file."""
         npy_file = os.path.join(self.temp_dir, "test.npy")
-        np.save(npy_file, self.test_data)
+        # Use object dtype to handle heterogeneous array lengths
+        np.save(npy_file, np.array(self.test_data, dtype=object))
 
         dataset = GeneralDataset(npy_file)
         self.assertEqual(len(dataset), 3)
@@ -163,21 +164,31 @@ class TestBinaryDataset(unittest.TestCase):
 
     def test_binary_dataset_creation(self):
         """Test creating binary dataset."""
-        # Create test binary file
-        binary_file = os.path.join(self.temp_dir, "test.bin")
-        test_data = b"Hello, World! This is test data for binary dataset."
+        # Create a proper BinaryDataset structure
+        dataset_dir = os.path.join(self.temp_dir, "binary_dataset")
+        os.makedirs(dataset_dir, exist_ok=True)
 
+        # Create meta.json file
+        meta_info = {
+            "num_sequences": 2,
+            "dtype": "float32",
+            "scales": [{"offset": 0, "length": 5}, {"offset": 5, "length": 3}],
+            "files": {"data-1-of-1.bin": 8},
+        }
+
+        meta_file = os.path.join(dataset_dir, "meta.json")
+        with open(meta_file, "w") as f:
+            json.dump(meta_info, f)
+
+        # Create binary data file
+        binary_file = os.path.join(dataset_dir, "data-1-of-1.bin")
+        test_data = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0], dtype=np.float32)
         with open(binary_file, "wb") as f:
-            f.write(test_data)
+            f.write(test_data.tobytes())
 
-        # Test with different chunk sizes
-        dataset = BinaryDataset(binary_file, chunk_size=10)
-        self.assertGreater(len(dataset), 0)
-
-        # Test reading chunks
-        chunk = dataset[0]
-        self.assertIsInstance(chunk, (bytes, str))
-        self.assertLessEqual(len(chunk), 10)
+        # Test binary dataset creation
+        dataset = BinaryDataset(dataset_dir)
+        self.assertEqual(len(dataset), 2)
 
 
 class TestReadFileByExtension(unittest.TestCase):
