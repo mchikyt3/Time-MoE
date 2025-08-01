@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
-import numpy as np
 import os
+
+import numpy as np
 import pandas as pd
-from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
+from torch.utils.data import Dataset
 
 from time_moe.datasets.general_dataset import GeneralDataset
 from time_moe.utils.log_util import log_in_local_rank_0

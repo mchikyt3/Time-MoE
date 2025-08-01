@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 from abc import abstractmethod
 
 

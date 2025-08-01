@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 import os
+
 import torch.distributed as dist
 
 
@@ -8,16 +8,14 @@ def is_master_process():
     rank = os.getenv('RANK')
     if (rank is None or rank == '0') and is_local_rank_0():
         return True
-    else:
-        return False
+    return False
 
 
 def is_local_rank_0():
     local_rank = os.getenv('LOCAL_RANK')
     if local_rank is None or local_rank == '0':
         return True
-    else:
-        return False
+    return False
 
 
 def get_local_world_size():

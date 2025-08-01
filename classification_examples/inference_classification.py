@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 """
 Inference script for Time-MoE classification models
 """
@@ -10,6 +9,7 @@ from typing import List, Union
 
 import numpy as np
 import torch
+
 from time_moe.models.modeling_time_moe_classification import (
     TimeMoeForSequenceClassification,
     TimeMoeForTokenClassification,
@@ -60,7 +60,8 @@ def predict_sequence_classification(
         timeseries: Time series data
         class_names: Optional list of class names
 
-    Returns:
+    Returns
+    -------
         dict: Prediction results
     """
     # Preprocess input
@@ -100,7 +101,8 @@ def predict_token_classification(
         timeseries: Time series data
         class_names: Optional list of class names
 
-    Returns:
+    Returns
+    -------
         dict: Prediction results
     """
     # Preprocess input
@@ -185,7 +187,7 @@ def main():
 
     # Load input data
     print(f"Loading input data from {args.input_data}...")
-    with open(args.input_data, "r") as f:
+    with open(args.input_data) as f:
         input_data = json.load(f)
 
     # Handle different input formats

@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
-import os
 import logging
+import os
 import sys
-import typing
 
 # -------- log setting ---------
 DEFAULT_LOGGER = "time_moe_logger"
@@ -24,8 +22,7 @@ def is_local_rank_0():
     local_rank = os.getenv('LOCAL_RANK')
     if local_rank is None or local_rank == '0':
         return True
-    else:
-        return False
+    return False
 
 
 def get_logger(name, level="INFO", handlers=None, update=False):

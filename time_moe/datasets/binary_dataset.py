@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 import json
 import os
+
 import numpy as np
 
 from .ts_dataset import TimeSeriesDataset
@@ -56,8 +56,7 @@ class BinaryDataset(TimeSeriesDataset):
 
         if 'mean' in seq_info and 'std' in seq_info:
             return sequence * seq_info['std'] + seq_info['mean']
-        else:
-            return sequence
+        return sequence
 
     def get_num_tokens(self):
         return self.num_tokens
@@ -75,10 +74,9 @@ class BinaryDataset(TimeSeriesDataset):
                 if end_offset <= end_idx:
                     binary_read_info_list.append([fn, offset - start_idx, length])
                     break
-                else:
-                    binary_read_info_list.append([fn, offset - start_idx, end_idx - offset])
-                    length = end_offset - end_idx
-                    offset = end_idx
+                binary_read_info_list.append([fn, offset - start_idx, end_idx - offset])
+                length = end_offset - end_idx
+                offset = end_idx
         return binary_read_info_list
 
     def _read_sequence_in_file(self, fn, offset_in_file, length):

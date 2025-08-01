@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 """
 Example script showing how to prepare data and fine-tune Time-MoE for classification
 """
@@ -14,7 +13,8 @@ def create_sample_time_series_classification_data():
     """
     Create sample time series classification data in the expected format.
 
-    Returns:
+    Returns
+    -------
         tuple: (train_data, val_data) as lists of dictionaries
     """
     np.random.seed(42)
@@ -67,7 +67,8 @@ def create_sample_token_classification_data():
     Create sample time series token classification data.
     Each timestep gets a label (e.g., for anomaly detection, regime classification, etc.)
 
-    Returns:
+    Returns
+    -------
         tuple: (train_data, val_data) as lists of dictionaries
     """
     np.random.seed(42)

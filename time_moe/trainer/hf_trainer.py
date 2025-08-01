@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
+import inspect
 import math
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 from functools import partial
 
-import inspect
-
-import transformers
 import torch
+import transformers
 from torch.optim.lr_scheduler import LambdaLR
 from transformers import get_scheduler
 
@@ -17,7 +15,7 @@ class TimeMoeTrainer(transformers.Trainer):
 
     def __init__(self, label_column: str = 'labels', loss_mask_column: str = 'loss_mask', *positional_args, **kwargs):
         super().__init__(*positional_args, **kwargs)
-        self.tokenizer = kwargs.get("tokenizer", None)
+        self.tokenizer = kwargs.get("tokenizer")
         self.label_column = label_column
         self.loss_mask_column = loss_mask_column
 

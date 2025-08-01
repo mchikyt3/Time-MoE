@@ -83,25 +83,24 @@ class TimeMoeRunner:
                 config.num_classes = num_classes
                 config.classifier_dropout = classifier_dropout
             model = model_class(config)
+        # For classification tasks, we need to modify the config before loading
+        elif (
+            task_type in ["sequence_classification", "token_classification"]
+            and num_classes is not None
+        ):
+            config = TimeMoeConfig.from_pretrained(
+                model_path, _attn_implementation=attn
+            )
+            config.num_classes = num_classes
+            config.classifier_dropout = classifier_dropout
+            model = model_class(config)
+            # Load the pretrained weights (this will load the backbone, classification head will be randomly initialized)
+            pretrained_model = TimeMoeForPrediction.from_pretrained(
+                model_path, **kwargs
+            )
+            model.model = pretrained_model.model  # Copy the backbone (TimeMoeModel)
         else:
-            # For classification tasks, we need to modify the config before loading
-            if (
-                task_type in ["sequence_classification", "token_classification"]
-                and num_classes is not None
-            ):
-                config = TimeMoeConfig.from_pretrained(
-                    model_path, _attn_implementation=attn
-                )
-                config.num_classes = num_classes
-                config.classifier_dropout = classifier_dropout
-                model = model_class(config)
-                # Load the pretrained weights (this will load the backbone, classification head will be randomly initialized)
-                pretrained_model = TimeMoeForPrediction.from_pretrained(
-                    model_path, **kwargs
-                )
-                model.model = pretrained_model.model  # Copy the backbone (TimeMoeModel)
-            else:
-                model = model_class.from_pretrained(model_path, **kwargs)
+            model = model_class.from_pretrained(model_path, **kwargs)
         return model
 
     def train_model(self, from_scratch: bool = False, **kwargs):
@@ -118,7 +117,7 @@ class TimeMoeRunner:
             raise ValueError(
                 'Must set at lease one argument: "global_batch_size" or "micro_batch_size"'
             )
-        elif global_batch_size is None:
+        if global_batch_size is None:
             gradient_accumulation_steps = 1
             global_batch_size = micro_batch_size * num_devices
         elif micro_batch_size is None:
@@ -311,20 +310,19 @@ class TimeMoeRunner:
                 f"Loaded classification dataset with {len(dataset)} samples"
             )
             return dataset
-        else:
-            # Use original forecasting dataset
-            dataset = TimeMoEDataset(
-                data_path, normalization_method=normalization_method
-            )
-            log_in_local_rank_0("Processing dataset to fixed-size sub-sequences...")
-            window_dataset = TimeMoEWindowDataset(
-                dataset,
-                context_length=max_length,
-                prediction_length=0,
-                stride=stride,
-                shuffle=False,
-            )
-            return window_dataset
+        # Use original forecasting dataset
+        dataset = TimeMoEDataset(
+            data_path, normalization_method=normalization_method
+        )
+        log_in_local_rank_0("Processing dataset to fixed-size sub-sequences...")
+        window_dataset = TimeMoEWindowDataset(
+            dataset,
+            context_length=max_length,
+            prediction_length=0,
+            stride=stride,
+            shuffle=False,
+        )
+        return window_dataset
 
 
 def setup_seed(seed: int = 9899):
@@ -334,7 +332,8 @@ def setup_seed(seed: int = 9899):
     Args:
         seed (int): seed number.
 
-    Returns:
+    Returns
+    -------
 
     """
     random.seed(seed)
@@ -358,14 +357,12 @@ def length_to_str(length):
         return f"{length / 1e12:.3f}T"
     if length >= 1e9:
         return f"{length / 1e9:.3f}B"
-    elif length >= 1e6:
+    if length >= 1e6:
         return f"{length / 1e6:.3f}M"
-    else:
-        return f"{length / 1e3:.3f}K"
+    return f"{length / 1e3:.3f}K"
 
 
 def _safe_float(number):
     if number is None:
         return None
-    else:
-        return float(number)
+    return float(number)

@@ -1,14 +1,13 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 
 from .modeling_time_moe import (
+    TimeMoeClassificationHead,
     TimeMoeConfig,
     TimeMoeForPrediction,
-    TimeMoeModel,
-    TimeMoePreTrainedModel,
-    TimeMoeClassificationHead,
     TimeMoeForSequenceClassification,
     TimeMoeForTokenClassification,
+    TimeMoeModel,
+    TimeMoePreTrainedModel,
 )
 
 __all__ = [

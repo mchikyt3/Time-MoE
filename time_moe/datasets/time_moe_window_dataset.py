@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 import random
+
 import numpy as np
 
 from time_moe.datasets.ts_dataset import TimeSeriesDataset
@@ -11,7 +11,8 @@ class TimeMoEWindowDataset:
     A dataset class for generating non-overlapping sliding windows from a time series dataset. 
     This is useful for training models that require fixed-length input sequences and corresponding labels.
 
-    Attributes:
+    Attributes
+    ----------
         dataset (TimeSeriesDataset): The underlying time series dataset.
         context_length (int): Length of the input context window.
         prediction_length (int): Length of the prediction window. Defaults to 0.
@@ -20,7 +21,8 @@ class TimeMoEWindowDataset:
         stride (int): Step size for sliding the window. Defaults to window_size.
         sub_seq_indexes (list): List of tuples containing sequence indices and their corresponding offsets.
 
-    Methods:
+    Methods
+    -------
         __len__():
             Returns the total number of sliding windows in the dataset.
         __iter__():
@@ -95,6 +97,7 @@ class UniversalTimeMoEWindowDataset:
     """
     A dataset that generates windows of time series data with pack technique.
     """
+
     def __init__(self, dataset: TimeSeriesDataset, context_length: int, prediction_length: int = 0,
                  shuffle: bool = False, **kwrags):
         self.dataset = dataset

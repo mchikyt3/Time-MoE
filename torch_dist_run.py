@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 """
 @author: peter.sxm
 @project: TimeMOE
@@ -8,6 +7,7 @@
 """
 import argparse
 import os
+
 import torch
 
 
@@ -17,7 +17,8 @@ def parse_arbitrary_args(argv):
     Args:
         argv: List of arguments (typically sys.argv).
 
-    Returns:
+    Returns
+    -------
         Dictionary of key-value pairs.
     """
     args = {}
@@ -30,13 +31,12 @@ def parse_arbitrary_args(argv):
                 value = key[tmp_idx + 1:]
                 key = key[:tmp_idx]
                 i += 1
+            elif i + 1 >= len(argv) or argv[i + 1].startswith('--'):
+                value = True
+                i += 1
             else:
-                if i + 1 >= len(argv) or argv[i + 1].startswith('--'):
-                    value = True
-                    i += 1
-                else:
-                    value = argv[i + 1]
-                    i += 2
+                value = argv[i + 1]
+                i += 2
             args[key] = value
 
         else:
@@ -53,14 +53,13 @@ def obtain_dist_env_dict():
 
     if master_addr is None:
         return None
-    else:
-        return {
-            'master_addr': master_addr,
-            'master_port': master_port,
-            'world_size': num_nodes,
-            'rank': rank,
-            'local_world_size': num_gpus_per_node,
-        }
+    return {
+        'master_addr': master_addr,
+        'master_port': master_port,
+        'world_size': num_nodes,
+        'rank': rank,
+        'local_world_size': num_gpus_per_node,
+    }
 
 
 def auto_dist_run(main_file: str, argv: str):

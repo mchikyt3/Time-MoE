@@ -67,7 +67,8 @@ def load_balancing_loss_func(
         num_experts (`int`, *optional*):
             Number of experts
 
-    Returns:
+    Returns
+    -------
         The auxiliary loss.
     """
     if (
@@ -175,7 +176,9 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=1):
             k have the shape [batch_size, heads, seq_len, head_dim], then setting unsqueeze_dim=1 makes
             cos[position_ids] and sin[position_ids] broadcastable to the shapes of q and k. Similarly, if q and k have
             the shape [batch_size, seq_len, heads, head_dim], then set unsqueeze_dim=2.
-    Returns:
+
+    Returns
+    -------
         `tuple(torch.Tensor)` comprising of the query and key tensors rotated using the Rotary Position Embedding.
     """
     cos = cos[position_ids].unsqueeze(unsqueeze_dim)
@@ -697,8 +700,7 @@ class TimeMoeFlashAttention2(TimeMoeAttention):
         )
         if origin_dtype not in [torch.bfloat16, torch.float16]:
             return attn_output.to(origin_dtype)
-        else:
-            return attn_output
+        return attn_output
 
     def _upad_input(
         self, query_layer, key_layer, value_layer, attention_mask, query_length
@@ -920,7 +922,7 @@ class TimeMoeModel(TimeMoePreTrainedModel):
             raise ValueError(
                 "You cannot specify both decoder_input_ids and decoder_inputs_embeds at the same time"
             )
-        elif input_ids is not None:
+        if input_ids is not None:
             if len(input_ids.shape) == 2:
                 input_ids.unsqueeze_(dim=-1)
             batch_size, seq_length, _ = input_ids.shape
@@ -1064,7 +1066,8 @@ class TimeMoeOutputLayer(nn.Module):
             Args:
                 x (torch.FloatTensor): with shape [B, seq_len, hidden_size]
 
-            Returns:
+        Returns
+        -------
         `       torch.FloatTensor: final prediction with shape [B, seq_len, input_size]
         """
         return self.out_layer(x)
@@ -1185,8 +1188,7 @@ class TimeMoeForPrediction(TimeMoePreTrainedModel, TSGenerationMixin):
                 for h in self.config.horizon_lengths[1:]:
                     if h > max_horizon_length:
                         break
-                    else:
-                        horizon_length = h
+                    horizon_length = h
             lm_head = self.lm_heads[self.horizon_length_map[horizon_length]]
             predictions = lm_head(hidden_states)
             if horizon_length > max_horizon_length:
@@ -1310,7 +1312,7 @@ class TimeMoeForPrediction(TimeMoePreTrainedModel, TSGenerationMixin):
             ):
                 attention_mask = attention_mask[:, -max_cache_length:]
 
-        position_ids = kwargs.get("position_ids", None)
+        position_ids = kwargs.get("position_ids")
         if attention_mask is not None and position_ids is None:
             # create position_ids on the fly for batch generation
             position_ids = attention_mask.long().cumsum(-1) - 1
@@ -1360,7 +1362,9 @@ class TimeMoeClassificationHead(nn.Module):
         """
         Args:
             hidden_states: [batch_size, seq_len, hidden_size]
-        Returns:
+
+        Returns
+        -------
             logits: [batch_size, num_classes]
         """
         # Use the last token's representation for classification

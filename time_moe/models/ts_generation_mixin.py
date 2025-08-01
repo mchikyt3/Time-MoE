@@ -2,10 +2,13 @@ import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import torch
-
 from transformers import GenerationMixin, LogitsProcessorList, StoppingCriteriaList
-from transformers.generation import validate_stopping_criteria, EosTokenCriteria
-from transformers.generation.utils import GenerateNonBeamOutput, GenerateEncoderDecoderOutput, GenerateDecoderOnlyOutput
+from transformers.generation import EosTokenCriteria, validate_stopping_criteria
+from transformers.generation.utils import (
+    GenerateDecoderOnlyOutput,
+    GenerateEncoderDecoderOutput,
+    GenerateNonBeamOutput,
+)
 from transformers.utils import ModelOutput
 
 
@@ -185,17 +188,15 @@ class TSGenerationMixin(GenerationMixin):
                     decoder_hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                 )
-            else:
-                return GenerateDecoderOnlyOutput(
-                    sequences=input_ids,
-                    scores=scores,
-                    logits=raw_logits,
-                    attentions=decoder_attentions,
-                    hidden_states=decoder_hidden_states,
-                    past_key_values=model_kwargs.get("past_key_values"),
-                )
-        else:
-            return input_ids
+            return GenerateDecoderOnlyOutput(
+                sequences=input_ids,
+                scores=scores,
+                logits=raw_logits,
+                attentions=decoder_attentions,
+                hidden_states=decoder_hidden_states,
+                past_key_values=model_kwargs.get("past_key_values"),
+            )
+        return input_ids
 
     def _update_model_kwargs_for_generation(
             self,
@@ -224,14 +225,13 @@ class TSGenerationMixin(GenerationMixin):
                 model_kwargs["attention_mask"] = torch.cat(
                     [attention_mask, attention_mask.new_ones((attention_mask.shape[0], horizon_length))], dim=-1
                 )
-        else:
-            # update decoder attention mask
-            if "decoder_attention_mask" in model_kwargs:
-                decoder_attention_mask = model_kwargs["decoder_attention_mask"]
-                model_kwargs["decoder_attention_mask"] = torch.cat(
-                    [decoder_attention_mask, decoder_attention_mask.new_ones((decoder_attention_mask.shape[0], horizon_length))],
-                    dim=-1,
-                )
+        # update decoder attention mask
+        elif "decoder_attention_mask" in model_kwargs:
+            decoder_attention_mask = model_kwargs["decoder_attention_mask"]
+            model_kwargs["decoder_attention_mask"] = torch.cat(
+                [decoder_attention_mask, decoder_attention_mask.new_ones((decoder_attention_mask.shape[0], horizon_length))],
+                dim=-1,
+            )
 
         if "cache_position" in model_kwargs and model_kwargs["cache_position"] is not None:
             model_kwargs["cache_position"] = model_kwargs["cache_position"][-1:] + horizon_length

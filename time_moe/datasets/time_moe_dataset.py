@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 import os
 
 import numpy as np
@@ -71,7 +70,7 @@ class TimeMoEDataset(TimeSeriesDataset):
             raise ValueError(
                 f"Index out of the dataset length: {seq_idx} >= {self.cumsum_lengths[-1]}"
             )
-        elif seq_idx < 0:
+        if seq_idx < 0:
             raise ValueError(f"Index out of the dataset length: {seq_idx} < 0")
 
         dataset_idx = binary_search(self.cumsum_lengths, seq_idx)
@@ -87,7 +86,7 @@ class TimeMoEDataset(TimeSeriesDataset):
             raise ValueError(
                 f"Index out of the dataset length: {seq_idx} >= {self.cumsum_lengths[-1]}"
             )
-        elif seq_idx < 0:
+        if seq_idx < 0:
             raise ValueError(f"Index out of the dataset length: {seq_idx} < 0")
 
         dataset_idx = binary_search(self.cumsum_lengths, seq_idx)

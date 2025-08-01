@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
+import gzip
 import json
 import os
 import pickle
-import gzip
-import yaml
+
 import numpy as np
+import yaml
 
 from .ts_dataset import TimeSeriesDataset
 
@@ -42,10 +42,8 @@ class GeneralDataset(TimeSeriesDataset):
             suffix = parts[-1]
             if suffix in ('json', 'jsonl', 'npy', 'npy.gz', 'pkl'):
                 return True
-            else:
-                return False
-        else:
             return False
+        return False
 
 
 def read_file_by_extension(fn):
@@ -56,9 +54,7 @@ def read_file_by_extension(fn):
         data = read_jsonl_to_list(fn)
     elif fn.endswith('.yaml'):
         data = load_yaml_file(fn)
-    elif fn.endswith('.npy'):
-        data = np.load(fn, allow_pickle=True)
-    elif fn.endswith('.npz'):
+    elif fn.endswith('.npy') or fn.endswith('.npz'):
         data = np.load(fn, allow_pickle=True)
     elif fn.endswith('.npy.gz'):
         with gzip.GzipFile(fn, 'r') as file:
@@ -71,13 +67,13 @@ def read_file_by_extension(fn):
 
 
 def read_jsonl_to_list(jsonl_fn):
-    with open(jsonl_fn, 'r', encoding='utf-8') as file:
+    with open(jsonl_fn, encoding='utf-8') as file:
         return [json.loads(line) for line in file.readlines()]
 
 
 def load_yaml_file(fn):
     if isinstance(fn, str):
-        with open(fn, 'r', encoding="utf-8") as f:
+        with open(fn, encoding="utf-8") as f:
             config = yaml.safe_load(f)
             return config
     else:
@@ -95,7 +91,6 @@ def load_pkl_obj(fn):
                 break
     if len(out_list) == 0:
         return None
-    elif len(out_list) == 1:
+    if len(out_list) == 1:
         return out_list[0]
-    else:
-        return out_list
+    return out_list
