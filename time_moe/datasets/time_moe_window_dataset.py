@@ -8,7 +8,7 @@ from time_moe.datasets.ts_dataset import TimeSeriesDataset
 
 class TimeMoEWindowDataset:
     """
-    A dataset class for generating non-overlapping sliding windows from a time series dataset. 
+    A dataset class for generating non-overlapping sliding windows from a time series dataset.
     This is useful for training models that require fixed-length input sequences and corresponding labels.
 
     Attributes
@@ -34,12 +34,21 @@ class TimeMoEWindowDataset:
         >>> dataset = TimeSeriesDataset(...)  # Assume this is a predefined dataset
         >>> context_length = 10
         >>> prediction_length = 5
-        >>> window_dataset = TimeMoEWindowDataset(dataset, context_length, prediction_length)
+        >>> window_dataset = TimeMoEWindowDataset(
+        ...     dataset, context_length, prediction_length
+        ... )
         >>> for sample in window_dataset:
         >>>     print(sample['input_ids'], sample['labels'], sample['loss_masks'])
     """
 
-    def __init__(self, dataset: TimeSeriesDataset, context_length: int, prediction_length: int = 0, stride: int = None, **kwrags):
+    def __init__(
+        self,
+        dataset: TimeSeriesDataset,
+        context_length: int,
+        prediction_length: int = 0,
+        stride: int = None,
+        **kwrags,
+    ):
         self.dataset = dataset
         self.context_length = context_length
         self.prediction_length = prediction_length
@@ -51,6 +60,7 @@ class TimeMoEWindowDataset:
         iterator = range(num_seqs)
         try:
             from tqdm import tqdm
+
             iterator = tqdm(iterator, total=num_seqs)
         except ImportError:
             pass
@@ -62,13 +72,11 @@ class TimeMoEWindowDataset:
                 continue
             self.sub_seq_indexes.append((seq_idx, 0))
             for offset_idx in range(
-                self.stride,
-                n_points - self.window_size_plus_one + 1,
-                self.stride
+                self.stride, n_points - self.window_size_plus_one + 1, self.stride
             ):
                 self.sub_seq_indexes.append((seq_idx, offset_idx))
 
-    def __len__(self): 
+    def __len__(self):
         return len(self.sub_seq_indexes)
 
     def __iter__(self):
@@ -77,20 +85,16 @@ class TimeMoEWindowDataset:
 
     def __getitem__(self, seq_idx):
         seq_i, offset_i = self.sub_seq_indexes[seq_idx]
-        seq = self.dataset[seq_i][offset_i: offset_i + self.window_size_plus_one]
+        seq = self.dataset[seq_i][offset_i : offset_i + self.window_size_plus_one]
         seq = np.array(seq, dtype=np.float32)
 
         loss_mask = np.ones(len(seq) - 1, dtype=np.int32)
         n_pad = self.window_size_plus_one - len(seq)
         if n_pad > 0:
-            seq = np.pad(seq, (0, n_pad), 'constant', constant_values=0)
-            loss_mask = np.pad(loss_mask, (0, n_pad), 'constant', constant_values=0)
+            seq = np.pad(seq, (0, n_pad), "constant", constant_values=0)
+            loss_mask = np.pad(loss_mask, (0, n_pad), "constant", constant_values=0)
 
-        return {
-            'input_ids': seq[:-1],
-            'labels': seq[1:],
-            'loss_masks': loss_mask
-        }
+        return {"input_ids": seq[:-1], "labels": seq[1:], "loss_masks": loss_mask}
 
 
 class UniversalTimeMoEWindowDataset:
@@ -98,8 +102,14 @@ class UniversalTimeMoEWindowDataset:
     A dataset that generates windows of time series data with pack technique.
     """
 
-    def __init__(self, dataset: TimeSeriesDataset, context_length: int, prediction_length: int = 0,
-                 shuffle: bool = False, **kwrags):
+    def __init__(
+        self,
+        dataset: TimeSeriesDataset,
+        context_length: int,
+        prediction_length: int = 0,
+        shuffle: bool = False,
+        **kwrags,
+    ):
         self.dataset = dataset
         self.context_length = context_length
         self.prediction_length = prediction_length
@@ -118,6 +128,7 @@ class UniversalTimeMoEWindowDataset:
 
         try:
             from tqdm import tqdm
+
             iterator = tqdm(iterator, total=n_seqs)
         except ImportError:
             pass
@@ -159,7 +170,9 @@ class UniversalTimeMoEWindowDataset:
         window_info = self.window_info_list[window_idx]
         seq = []
         for seq_idx, start_idx_in_seq, offset in window_info:
-            part_seq = self.dataset[seq_idx][start_idx_in_seq: start_idx_in_seq + offset]
+            part_seq = self.dataset[seq_idx][
+                start_idx_in_seq : start_idx_in_seq + offset
+            ]
             seq.append(part_seq)
         if len(seq) == 1:
             seq = seq[0]
@@ -170,6 +183,6 @@ class UniversalTimeMoEWindowDataset:
         else:
             seq = np.concatenate(seq, axis=0, dtype=np.float32)
         return {
-            'input_ids': seq[:-1],
-            'labels': seq[1:],
+            "input_ids": seq[:-1],
+            "labels": seq[1:],
         }

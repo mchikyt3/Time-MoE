@@ -311,9 +311,7 @@ class TimeMoeRunner:
             )
             return dataset
         # Use original forecasting dataset
-        dataset = TimeMoEDataset(
-            data_path, normalization_method=normalization_method
-        )
+        dataset = TimeMoEDataset(data_path, normalization_method=normalization_method)
         log_in_local_rank_0("Processing dataset to fixed-size sub-sequences...")
         window_dataset = TimeMoEWindowDataset(
             dataset,

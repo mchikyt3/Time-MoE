@@ -11,7 +11,6 @@ from time_moe.utils.log_util import log_in_local_rank_0
 
 
 class BenchmarkEvalDataset(Dataset):
-
     def __init__(self, csv_path, context_length: int, prediction_length: int):
         super().__init__()
         self.context_length = context_length
@@ -20,30 +19,52 @@ class BenchmarkEvalDataset(Dataset):
         df = pd.read_csv(csv_path)
 
         base_name = os.path.basename(csv_path).lower()
-        if 'etth' in base_name:
-            border1s = [0, 12 * 30 * 24 - context_length, 12 * 30 * 24 + 4 * 30 * 24 - context_length]
-            border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
-        elif 'ettm' in base_name:
-            border1s = [0, 12 * 30 * 24 * 4 - context_length, 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - context_length]
-            border2s = [12 * 30 * 24 * 4, 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4, 12 * 30 * 24 * 4 + 8 * 30 * 24 * 4]
+        if "etth" in base_name:
+            border1s = [
+                0,
+                12 * 30 * 24 - context_length,
+                12 * 30 * 24 + 4 * 30 * 24 - context_length,
+            ]
+            border2s = [
+                12 * 30 * 24,
+                12 * 30 * 24 + 4 * 30 * 24,
+                12 * 30 * 24 + 8 * 30 * 24,
+            ]
+        elif "ettm" in base_name:
+            border1s = [
+                0,
+                12 * 30 * 24 * 4 - context_length,
+                12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - context_length,
+            ]
+            border2s = [
+                12 * 30 * 24 * 4,
+                12 * 30 * 24 * 4 + 4 * 30 * 24 * 4,
+                12 * 30 * 24 * 4 + 8 * 30 * 24 * 4,
+            ]
         else:
             num_train = int(len(df) * 0.7)
             num_test = int(len(df) * 0.2)
             num_vali = len(df) - num_train - num_test
-            border1s = [0, num_train - context_length, len(df) - num_test - context_length]
+            border1s = [
+                0,
+                num_train - context_length,
+                len(df) - num_test - context_length,
+            ]
             border2s = [num_train, num_train + num_vali, len(df)]
 
-        start_dt = df.iloc[border1s[2]]['date']
-        eval_start_dt = df.iloc[border1s[2] + context_length]['date']
-        end_dt = df.iloc[border2s[2] - 1]['date']
-        log_in_local_rank_0(f'>>> Split test data from {start_dt} to {end_dt}, '
-                            f'and evaluation start date is: {eval_start_dt}')
+        start_dt = df.iloc[border1s[2]]["date"]
+        eval_start_dt = df.iloc[border1s[2] + context_length]["date"]
+        end_dt = df.iloc[border2s[2] - 1]["date"]
+        log_in_local_rank_0(
+            f">>> Split test data from {start_dt} to {end_dt}, "
+            f"and evaluation start date is: {eval_start_dt}"
+        )
 
         cols = df.columns[1:]
         df_values = df[cols].values
 
-        train_data = df_values[border1s[0]:border2s[0]]
-        test_data = df_values[border1s[2]:border2s[2]]
+        train_data = df_values[border1s[0] : border2s[0]]
+        test_data = df_values[border1s[2] : border2s[2]]
 
         # scaling
         scaler = StandardScaler()
@@ -75,17 +96,24 @@ class BenchmarkEvalDataset(Dataset):
         seq_i, offset_i = self.sub_seq_indexes[idx]
         seq = self.hf_dataset[seq_i]
 
-        window_seq = np.array(seq[offset_i - self.window_length: offset_i], dtype=np.float32)
+        window_seq = np.array(
+            seq[offset_i - self.window_length : offset_i], dtype=np.float32
+        )
 
         return {
-            'inputs': np.array(window_seq[: self.context_length], dtype=np.float32),
-            'labels': np.array(window_seq[-self.prediction_length:], dtype=np.float32),
+            "inputs": np.array(window_seq[: self.context_length], dtype=np.float32),
+            "labels": np.array(window_seq[-self.prediction_length :], dtype=np.float32),
         }
 
 
 class GeneralEvalDataset(Dataset):
-
-    def __init__(self, data_path, context_length: int, prediction_length: int, onfly_norm: bool = False):
+    def __init__(
+        self,
+        data_path,
+        context_length: int,
+        prediction_length: int,
+        onfly_norm: bool = False,
+    ):
         super().__init__()
         self.context_length = context_length
         self.prediction_length = prediction_length
@@ -112,10 +140,12 @@ class GeneralEvalDataset(Dataset):
         seq_i, offset_i = self.sub_seq_indexes[idx]
         seq = self.dataset[seq_i]
 
-        window_seq = np.array(seq[offset_i - self.window_length: offset_i], dtype=np.float32)
+        window_seq = np.array(
+            seq[offset_i - self.window_length : offset_i], dtype=np.float32
+        )
 
         inputs = np.array(window_seq[: self.context_length], dtype=np.float32)
-        labels = np.array(window_seq[-self.prediction_length:], dtype=np.float32)
+        labels = np.array(window_seq[-self.prediction_length :], dtype=np.float32)
 
         if self.onfly_norm:
             mean_ = inputs.mean()
@@ -126,6 +156,6 @@ class GeneralEvalDataset(Dataset):
             labels = (labels - mean_) / std_
 
         return {
-            'inputs': np.array(window_seq[: self.context_length], dtype=np.float32),
-            'labels': np.array(window_seq[-self.prediction_length:], dtype=np.float32),
+            "inputs": np.array(window_seq[: self.context_length], dtype=np.float32),
+            "labels": np.array(window_seq[-self.prediction_length :], dtype=np.float32),
         }

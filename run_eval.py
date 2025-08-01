@@ -12,9 +12,13 @@ from transformers import AutoModelForCausalLM
 from time_moe.datasets.benchmark_dataset import BenchmarkEvalDataset, GeneralEvalDataset
 
 
-def setup_nccl(rank, world_size, master_addr='127.0.0.1', master_port=9899):
-    dist.init_process_group("nccl", init_method=f'tcp://{master_addr}:{master_port}', rank=rank,
-                            world_size=world_size)
+def setup_nccl(rank, world_size, master_addr="127.0.0.1", master_port=9899):
+    dist.init_process_group(
+        "nccl",
+        init_method=f"tcp://{master_addr}:{master_port}",
+        rank=rank,
+        world_size=world_size,
+    )
 
 
 def count_num_tensor_elements(tensor):
@@ -51,22 +55,25 @@ class TimeMoE:
     def __init__(self, model_path, device, context_length, prediction_length, **kwargs):
         try:
             from time_moe.models.modeling_time_moe import TimeMoeForPrediction
+
             model = TimeMoeForPrediction.from_pretrained(
                 model_path,
                 device_map=device,
                 # attn_implementation='flash_attention_2',
-                torch_dtype='auto',
+                torch_dtype="auto",
             )
         except:
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 device_map=device,
                 # attn_implementation='flash_attention_2',
-                torch_dtype='auto',
+                torch_dtype="auto",
                 trust_remote_code=True,
             )
 
-        logging.info(f'>>> Model dtype: {model.dtype}; Attention:{model.config._attn_implementation}')
+        logging.info(
+            f">>> Model dtype: {model.dtype}; Attention:{model.config._attn_implementation}"
+        )
 
         self.model = model
         self.device = device
@@ -79,11 +86,11 @@ class TimeMoE:
         prediction_length = self.prediction_length
 
         outputs = model.generate(
-            inputs=batch['inputs'].to(device).to(model.dtype),
+            inputs=batch["inputs"].to(device).to(model.dtype),
             max_new_tokens=prediction_length,
         )
         preds = outputs[:, -prediction_length:]
-        labels = batch['labels'].to(device)
+        labels = batch["labels"].to(device)
         if len(preds.shape) > len(labels.shape):
             labels = labels[..., None]
         return preds, labels
@@ -94,37 +101,42 @@ def evaluate(args):
     context_length = args.context_length
     prediction_length = args.prediction_length
 
-    master_addr = os.getenv('MASTER_ADDR', '127.0.0.1')
-    master_port = os.getenv('MASTER_PORT', 9899)
-    world_size = int(os.getenv('WORLD_SIZE') or 1)
-    rank = int(os.getenv('RANK') or 0)
-    local_rank = int(os.getenv('LOCAL_RANK') or 0)
+    master_addr = os.getenv("MASTER_ADDR", "127.0.0.1")
+    master_port = os.getenv("MASTER_PORT", 9899)
+    world_size = int(os.getenv("WORLD_SIZE") or 1)
+    rank = int(os.getenv("RANK") or 0)
+    local_rank = int(os.getenv("LOCAL_RANK") or 0)
     if torch.cuda.is_available():
         try:
-            setup_nccl(rank=rank, world_size=world_size, master_addr=master_addr, master_port=master_port)
+            setup_nccl(
+                rank=rank,
+                world_size=world_size,
+                master_addr=master_addr,
+                master_port=master_port,
+            )
             device = f"cuda:{local_rank}"
             is_dist = True
         except Exception as e:
-            print('Error: ', f'Setup nccl fail, so set device to cpu: {e}')
-            device = 'cpu'
+            print("Error: ", f"Setup nccl fail, so set device to cpu: {e}")
+            device = "cpu"
             is_dist = False
     else:
-        device = 'cpu'
+        device = "cpu"
         is_dist = False
 
     # evaluation
     metric_list = [
-        MSEMetric(name='mse'),
-        MAEMetric(name='mae'),
+        MSEMetric(name="mse"),
+        MAEMetric(name="mae"),
     ]
 
     model = TimeMoE(
         args.model,
         device,
         context_length=context_length,
-        prediction_length=prediction_length
+        prediction_length=prediction_length,
     )
-    if args.data.endswith('.csv'):
+    if args.data.endswith(".csv"):
         dataset = BenchmarkEvalDataset(
             args.data,
             context_length=context_length,
@@ -164,7 +176,7 @@ def evaluate(args):
     ret_metric = {}
     for metric in metric_list:
         ret_metric[metric.name] = metric.value / acc_count
-    print(f'{rank} - {ret_metric}')
+    print(f"{rank} - {ret_metric}")
 
     metric_tensors = [metric.value for metric in metric_list] + [acc_count]
     if is_dist:
@@ -177,10 +189,10 @@ def evaluate(args):
 
     if rank == 0:
         item = {
-            'model': args.model,
-            'data': args.data,
-            'context_length': args.context_length,
-            'prediction_length': args.prediction_length,
+            "model": args.model,
+            "data": args.data,
+            "context_length": args.context_length,
+            "prediction_length": args.prediction_length,
         }
 
         count = all_stat[-1]
@@ -190,36 +202,19 @@ def evaluate(args):
         logging.info(item)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser('TimeMoE Evaluate')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("TimeMoE Evaluate")
     parser.add_argument(
-        '--model', '-m',
-        type=str,
-        default='Maple728/TimeMoE-50M',
-        help='Model path'
+        "--model", "-m", type=str, default="Maple728/TimeMoE-50M", help="Model path"
     )
-    parser.add_argument(
-        '--data', '-d',
-        type=str,
-        help='Benchmark data path'
-    )
+    parser.add_argument("--data", "-d", type=str, help="Benchmark data path")
 
     parser.add_argument(
-        '--batch_size', '-b',
-        type=int,
-        default=32,
-        help='Batch size of evaluation'
+        "--batch_size", "-b", type=int, default=32, help="Batch size of evaluation"
     )
+    parser.add_argument("--context_length", "-c", type=int, help="Context length")
     parser.add_argument(
-        '--context_length', '-c',
-        type=int,
-        help='Context length'
-    )
-    parser.add_argument(
-        '--prediction_length', '-p',
-        type=int,
-        default=96,
-        help='Prediction length'
+        "--prediction_length", "-p", type=int, default=96, help="Prediction length"
     )
     args = parser.parse_args()
     if args.context_length is None:

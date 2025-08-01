@@ -5,6 +5,7 @@
 @time: 2024/5/22 20:04
 @desc:
 """
+
 import argparse
 import os
 
@@ -26,12 +27,12 @@ def parse_arbitrary_args(argv):
     while i < len(argv):
         if argv[i].startswith("--"):
             key = argv[i][2:]
-            if key.find('=') > 0:
-                tmp_idx = key.find('=')
-                value = key[tmp_idx + 1:]
+            if key.find("=") > 0:
+                tmp_idx = key.find("=")
+                value = key[tmp_idx + 1 :]
                 key = key[:tmp_idx]
                 i += 1
-            elif i + 1 >= len(argv) or argv[i + 1].startswith('--'):
+            elif i + 1 >= len(argv) or argv[i + 1].startswith("--"):
                 value = True
                 i += 1
             else:
@@ -45,66 +46,63 @@ def parse_arbitrary_args(argv):
 
 
 def obtain_dist_env_dict():
-    num_gpus_per_node = os.getenv('LOCAL_WORLD_SIZE') or torch.cuda.device_count() or 1
-    num_nodes = os.getenv('WORLD_SIZE') or 1
-    rank = os.getenv('RANK') or 0
-    master_addr = os.getenv('MASTER_ADDR') or 'localhost'
-    master_port = os.getenv('MASTER_PORT') or 9899
+    num_gpus_per_node = os.getenv("LOCAL_WORLD_SIZE") or torch.cuda.device_count() or 1
+    num_nodes = os.getenv("WORLD_SIZE") or 1
+    rank = os.getenv("RANK") or 0
+    master_addr = os.getenv("MASTER_ADDR") or "localhost"
+    master_port = os.getenv("MASTER_PORT") or 9899
 
     if master_addr is None:
         return None
     return {
-        'master_addr': master_addr,
-        'master_port': master_port,
-        'world_size': num_nodes,
-        'rank': rank,
-        'local_world_size': num_gpus_per_node,
+        "master_addr": master_addr,
+        "master_port": master_port,
+        "world_size": num_nodes,
+        "rank": rank,
+        "local_world_size": num_gpus_per_node,
     }
 
 
 def auto_dist_run(main_file: str, argv: str):
     if torch.cuda.is_available():
         env_dict = obtain_dist_env_dict()
-        launch_cmd = ' '.join([
-            'torchrun',
-            f'--master_addr={env_dict["master_addr"]}',
-            f'--master_port={env_dict["master_port"]}',
-            f'--node_rank={env_dict["rank"]}',
-            f'--nproc_per_node={env_dict["local_world_size"]}',
-            f'--nnodes={env_dict["world_size"]}',
-        ])
+        launch_cmd = " ".join(
+            [
+                "torchrun",
+                f"--master_addr={env_dict['master_addr']}",
+                f"--master_port={env_dict['master_port']}",
+                f"--node_rank={env_dict['rank']}",
+                f"--nproc_per_node={env_dict['local_world_size']}",
+                f"--nnodes={env_dict['world_size']}",
+            ]
+        )
 
-        executed_cmd = launch_cmd + f' {main_file} {argv}'
+        executed_cmd = launch_cmd + f" {main_file} {argv}"
     else:
-        executed_cmd = f'python {main_file} {argv}'
+        executed_cmd = f"python {main_file} {argv}"
 
     os.system(f'echo "{executed_cmd}"')
 
     if os.system(executed_cmd) != 0:
-        raise RuntimeError(f'Error occurred when execute: {executed_cmd}')
+        raise RuntimeError(f"Error occurred when execute: {executed_cmd}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("main_file", help="Main file path")
     parser.add_argument(
-        'main_file',
-        help='Main file path'
-    )
-    parser.add_argument(
-        '--port', '-p',
+        "--port",
+        "-p",
         default=9899,
         type=int,
-        help='Port to use for distributed training'
+        help="Port to use for distributed training",
     )
 
     args, unknown = parser.parse_known_args()
-    argv = ' '.join(unknown)
+    argv = " ".join(unknown)
 
     unique_job_name = args.main_file + argv
-    os.environ['MASTER_PORT'] = str(args.port)
+    os.environ["MASTER_PORT"] = str(args.port)
 
-    auto_dist_run(
-        main_file=args.main_file,
-        argv=argv
-    )
+    auto_dist_run(main_file=args.main_file, argv=argv)
