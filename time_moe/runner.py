@@ -47,6 +47,16 @@ class TimeMoeRunner:
         elif attn == "auto":
             # try to use flash-attention
             try:
+                from flash_attn import (  # noqa: F401, PLC0415
+                    flash_attn_func,
+                    flash_attn_varlen_func,
+                )
+                from flash_attn.bert_padding import (  # noqa: F401, PLC0415
+                    index_first_axis,
+                    pad_input,
+                    unpad_input,
+                )
+
                 attn = "flash_attention_2"
             except:
                 log_in_local_rank_0(
