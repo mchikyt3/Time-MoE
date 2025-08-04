@@ -16,8 +16,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
-    from time_moe.datasets.general_dataset import GeneralDataset, read_file_by_extension
     from time_moe.datasets.binary_dataset import BinaryDataset
+    from time_moe.datasets.general_dataset import GeneralDataset, read_file_by_extension
 
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:

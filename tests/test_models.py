@@ -12,19 +12,20 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import torch
-    import torch.nn as nn
+    from torch import nn
+
     from time_moe.models.configuration_time_moe import TimeMoeConfig
     from time_moe.models.modeling_time_moe import (
-        TimeMoeInputEmbedding,
-        TimeMoeRMSNorm,
-        TimeMoeMLP,
         TimeMoeAttention,
+        TimeMoeClassificationHead,
         TimeMoeDecoderLayer,
-        TimeMoeModel,
         TimeMoeForPrediction,
         TimeMoeForSequenceClassification,
         TimeMoeForTokenClassification,
-        TimeMoeClassificationHead,
+        TimeMoeInputEmbedding,
+        TimeMoeMLP,
+        TimeMoeModel,
+        TimeMoeRMSNorm,
         load_balancing_loss_func,
         repeat_kv,
     )

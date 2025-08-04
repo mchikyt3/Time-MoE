@@ -13,13 +13,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     import torch
+
+    from time_moe.datasets.general_dataset import GeneralDataset
     from time_moe.models.configuration_time_moe import TimeMoeConfig
     from time_moe.models.modeling_time_moe import (
         TimeMoeForPrediction,
         TimeMoeForSequenceClassification,
         TimeMoeForTokenClassification,
     )
-    from time_moe.datasets.general_dataset import GeneralDataset
     from time_moe.runner import TimeMoeRunner
 
     DEPENDENCIES_AVAILABLE = True

@@ -12,8 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
-    from time_moe.utils.log_util import get_logger, log_in_local_rank_0, is_local_rank_0
     from time_moe.utils.dist_util import get_world_size
+    from time_moe.utils.log_util import get_logger, is_local_rank_0, log_in_local_rank_0
 
     DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
