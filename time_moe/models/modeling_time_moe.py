@@ -1377,10 +1377,7 @@ class TimeMoeClassificationHead(nn.Module):
 
 
 class TimeMoeForSequenceClassification(TimeMoePreTrainedModel):
-    """
-    TimeMoe Model with a sequence classification head on top (a linear layer on top of
-    the last token hidden states).
-    """
+    """TimeMoe Model with a sequence classification head on top."""
 
     def __init__(self, config: TimeMoeConfig):
         super().__init__(config)
