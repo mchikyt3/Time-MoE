@@ -1367,11 +1367,15 @@ class TimeMoeClassificationHead(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         """
         Args:
-            hidden_states: [batch_size, hidden_size] - Last token hidden states
+            hidden_states: Input tensor of shape:
+                - [batch_size, hidden_size] for sequence classification
+                - [batch_size, seq_len, hidden_size] for token classification
 
         Returns
         -------
-            logits: [batch_size, num_classes]
+            logits: Output tensor of shape:
+                - [batch_size, num_classes] for sequence classification
+                - [batch_size, seq_len, num_classes] for token classification
         """
         return self.classifier(self.dropout(hidden_states))
 
@@ -1466,8 +1470,11 @@ class TimeMoeForTokenClassification(TimeMoePreTrainedModel):
         self.num_classes = getattr(config, "num_classes", 2)
 
         self.model = TimeMoeModel(config)
-        self.dropout = nn.Dropout(getattr(config, "classifier_dropout", 0.1))
-        self.classifier = nn.Linear(config.hidden_size, self.num_classes)
+        self.classification_head = TimeMoeClassificationHead(
+            hidden_size=config.hidden_size,
+            num_classes=self.num_classes,
+            dropout=getattr(config, "classifier_dropout", 0.1),
+        )
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1507,8 +1514,11 @@ class TimeMoeForTokenClassification(TimeMoePreTrainedModel):
         )
 
         hidden_states = outputs[0]  # [batch_size, seq_len, hidden_size]
-        hidden_states = self.dropout(hidden_states)
-        logits = self.classifier(hidden_states)  # [batch_size, seq_len, num_classes]
+
+        # Apply classification head to each token position
+        # TimeMoeClassificationHead handles [batch_size, seq_len, hidden_size] input
+        # and produces [batch_size, seq_len, num_classes] output
+        logits = self.classification_head(hidden_states)
 
         loss = None
         if labels is not None:
