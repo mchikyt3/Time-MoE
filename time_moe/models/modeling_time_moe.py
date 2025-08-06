@@ -1506,9 +1506,9 @@ class TimeMoeForTokenClassification(TimeMoePreTrainedModel):
             return_dict=return_dict,
         )
 
-        hidden_states = outputs[0]  # [batch_size, hidden_size]
+        hidden_states = outputs[0]  # [batch_size, seq_len, hidden_size]
         hidden_states = self.dropout(hidden_states)
-        logits = self.classifier(hidden_states)  # [batch_size, num_classes]
+        logits = self.classifier(hidden_states)  # [batch_size, seq_len, num_classes]
 
         loss = None
         if labels is not None:
