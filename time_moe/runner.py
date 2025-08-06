@@ -322,33 +322,35 @@ class TimeMoeRunner:
     ):
         log_in_local_rank_0("Loading dataset...")
 
-        if task_type in ["sequence_classification", "token_classification"]:
-            # Use classification dataset wrapper
-            from time_moe.datasets.time_moe_dataset import (  # noqa: PLC0415
-                TimeMoeClassificationWrapper,
-            )
-
-            dataset = TimeMoeClassificationWrapper(
-                data_path=data_path,
-                context_length=max_length,
-                task_type=task_type,
-                num_classes=kwargs.get("num_classes"),
-                normalization_method=normalization_method,
-            )
-            log_in_local_rank_0(
-                f"Loaded classification dataset with {len(dataset)} samples"
-            )
-            return dataset
-        # Use original forecasting dataset
+        # Use unified approach for both forecasting and classification
         dataset = TimeMoEDataset(data_path, normalization_method=normalization_method)
         log_in_local_rank_0("Processing dataset to fixed-size sub-sequences...")
-        window_dataset = TimeMoEWindowDataset(
-            dataset,
-            context_length=max_length,
-            prediction_length=0,
-            stride=stride,
-            shuffle=False,
-        )
+        
+        # For classification tasks, pass task_type and num_classes to the window dataset
+        if task_type in ["sequence_classification", "token_classification"]:
+            window_dataset = TimeMoEWindowDataset(
+                dataset,
+                context_length=max_length,
+                prediction_length=0,
+                stride=stride,
+                shuffle=False,
+                task_type=task_type,
+                num_classes=kwargs.get("num_classes"),
+            )
+            log_in_local_rank_0(
+                f"Loaded {task_type} dataset with {len(window_dataset)} samples"
+            )
+        else:
+            # For forecasting, use original behavior
+            window_dataset = TimeMoEWindowDataset(
+                dataset,
+                context_length=max_length,
+                prediction_length=0,
+                stride=stride,
+                shuffle=False,
+                task_type=task_type,
+            )
+        
         return window_dataset
 
 

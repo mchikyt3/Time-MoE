@@ -19,7 +19,9 @@ class TimeMoEDataset(TimeSeriesDataset):
         if normalization_method is None:
             self.normalization_method = None
         elif isinstance(normalization_method, str):
-            if normalization_method.lower() == "max":
+            if normalization_method.lower() in ["none", "null"]:
+                self.normalization_method = None
+            elif normalization_method.lower() == "max":
                 self.normalization_method = max_scaler
             elif normalization_method.lower() == "zero":
                 self.normalization_method = zero_scaler

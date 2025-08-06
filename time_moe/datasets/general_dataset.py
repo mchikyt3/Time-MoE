@@ -24,6 +24,10 @@ class GeneralDataset(TimeSeriesDataset):
             seq = seq["sequence"]
         return seq
 
+    def get_raw_item(self, seq_idx):
+        """Get the raw item without extracting the sequence field."""
+        return self.data[seq_idx]
+
     def get_num_tokens(self):
         if self.num_tokens is None:
             self.num_tokens = sum([len(seq) for seq in self])
