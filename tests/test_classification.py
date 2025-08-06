@@ -75,8 +75,7 @@ class TestTimeMoeClassification(unittest.TestCase):
 
         # Check model structure
         self.assertTrue(hasattr(model, "model"))  # Backbone
-        self.assertTrue(hasattr(model, "classifier"))  # Head
-        self.assertTrue(hasattr(model, "dropout"))  # Dropout
+        self.assertTrue(hasattr(model, "classification_head"))  # Head
         self.assertEqual(model.num_classes, 3)
 
     def test_freeze_backbone_sequence_classification(self):
@@ -118,11 +117,11 @@ class TestTimeMoeClassification(unittest.TestCase):
         # Count trainable parameters after freezing
         trainable_after = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-        # Calculate non-backbone parameters (classifier + dropout)
-        classifier_params = sum(p.numel() for p in model.classifier.parameters())
+        # Calculate non-backbone parameters (classification head)
+        head_params = sum(p.numel() for p in model.classification_head.parameters())
 
-        # Verify only non-backbone parameters are trainable
-        self.assertEqual(trainable_after, classifier_params)
+        # Verify only classification head parameters are trainable
+        self.assertEqual(trainable_after, head_params)
         self.assertLess(trainable_after, total_params)
 
     def test_model_forward_pass_sequence_classification(self):

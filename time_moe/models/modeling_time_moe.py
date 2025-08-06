@@ -1459,10 +1459,7 @@ class TimeMoeForSequenceClassification(TimeMoePreTrainedModel):
 
 
 class TimeMoeForTokenClassification(TimeMoePreTrainedModel):
-    """
-    TimeMoe Model with a token classification head on top (a linear layer on top of the hidden states output).
-    Useful for sequence labeling tasks.
-    """
+    """TimeMoe Model with a token classification head on top."""
 
     def __init__(self, config: TimeMoeConfig):
         super().__init__(config)

@@ -149,15 +149,22 @@ class TestTimeMoeComponents(unittest.TestCase):
             dropout=config_with_classes.classifier_dropout,
         )
 
-        # Test forward pass
+        # Test 1: Token classification (3D input)
         batch_size, seq_len = 2, 10
-        hidden_states = torch.randn(
+        hidden_states_3d = torch.randn(
             batch_size, seq_len, config_with_classes.hidden_size
         )
 
-        output = classification_head(hidden_states)
+        output_3d = classification_head(hidden_states_3d)
+        expected_shape_3d = (batch_size, seq_len, config_with_classes.num_classes)
+        self.assertEqual(output_3d.shape, expected_shape_3d)
 
-        self.assertEqual(output.shape, (batch_size, config_with_classes.num_classes))
+        # Test 2: Sequence classification (2D input - last token hidden states)
+        hidden_states_2d = torch.randn(batch_size, config_with_classes.hidden_size)
+
+        output_2d = classification_head(hidden_states_2d)
+        expected_shape_2d = (batch_size, config_with_classes.num_classes)
+        self.assertEqual(output_2d.shape, expected_shape_2d)
 
 
 class TestTimeMoeModels(unittest.TestCase):
