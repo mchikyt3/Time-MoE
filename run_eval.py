@@ -10,6 +10,11 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM
 
 from time_moe.datasets.benchmark_dataset import BenchmarkEvalDataset, GeneralEvalDataset
+from time_moe.models.modeling_time_moe import (
+    TimeMoeForPrediction,
+    TimeMoeForSequenceClassification,
+    TimeMoeForTokenClassification,
+)
 
 
 def setup_nccl(rank, world_size, master_addr="127.0.0.1", master_port=9899):
@@ -103,8 +108,6 @@ class TimeMoE:
 
         if task_type == "forecasting":
             try:
-                from time_moe.models.modeling_time_moe import TimeMoeForPrediction
-
                 model = TimeMoeForPrediction.from_pretrained(
                     model_path,
                     device_map=device,
@@ -120,18 +123,12 @@ class TimeMoE:
                     trust_remote_code=True,
                 )
         elif task_type == "sequence_classification":
-            from time_moe.models.modeling_time_moe import (
-                TimeMoeForSequenceClassification,
-            )
-
             model = TimeMoeForSequenceClassification.from_pretrained(
                 model_path,
                 device_map=device,
                 torch_dtype="auto",
             )
         elif task_type == "token_classification":
-            from time_moe.models.modeling_time_moe import TimeMoeForTokenClassification
-
             model = TimeMoeForTokenClassification.from_pretrained(
                 model_path,
                 device_map=device,
