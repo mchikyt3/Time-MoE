@@ -1431,10 +1431,11 @@ class TimeMoeForSequenceClassification(TimeMoePreTrainedModel):
             return_dict=return_dict,
         )
 
-        hidden_states = outputs[0]  # [batch_size, hidden_size]
+        hidden_states = outputs[0]  # [batch_size, seq_len, hidden_size]
 
         # Get classification logits from last token hidden states
-        logits = self.classification_head(hidden_states)
+        last_hidden_states = hidden_states[:, -1, :]  # [batch_size, hidden_size]
+        logits = self.classification_head(last_hidden_states)
 
         loss = None
         if labels is not None:
