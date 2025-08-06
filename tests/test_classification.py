@@ -229,7 +229,6 @@ class TestTimeMoeClassification(unittest.TestCase):
                 num_experts=2,
                 num_experts_per_tok=1,
                 num_classes=3,
-                pooling_strategy=strategy,
                 use_dense=True,  # Use dense to avoid MoE issues
                 apply_aux_loss=False,  # Must be False when use_dense=True
             )

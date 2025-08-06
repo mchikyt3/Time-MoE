@@ -371,17 +371,6 @@ Time-MoE supports multiple pooling strategies to aggregate timestep representati
 | `weighted_temporal` | Recent timesteps weighted more heavily | Recent events more important, trend analysis, recency bias | Real-time monitoring, recent trend classification |
 | `conv_pool` | 1D convolution followed by pooling | Local patterns, feature extraction, translation invariance | Pattern recognition, motif detection |
 
-**Using Different Pooling Strategies:**
-```bash
-# Using attention pooling for complex patterns
-python main.py -d <data_path> --task_type sequence_classification --pooling_strategy attention
-
-# Using multi_scale for robust performance (recommended default)
-python main.py -d <data_path> --task_type sequence_classification --pooling_strategy multi_scale
-
-# Using last_token for sequential dependencies
-python main.py -d <data_path> --task_type sequence_classification --pooling_strategy last_token
-```
 
 **Performance Tips:**
 - 🔍 **Try multiple strategies**: Different datasets may benefit from different approaches

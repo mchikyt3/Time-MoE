@@ -37,7 +37,6 @@ class TimeMoeRunner:
         task_type: str = "forecasting",
         num_classes: int = None,
         classifier_dropout: float = 0.1,
-        pooling_strategy: str = "last_token",
         **kwargs,
     ):
         if model_path is None:
@@ -93,7 +92,6 @@ class TimeMoeRunner:
             ):
                 config.num_classes = num_classes
                 config.classifier_dropout = classifier_dropout
-                config.pooling_strategy = pooling_strategy
             model = model_class(config)
         # For classification tasks, we need to modify the config before loading
         elif (
@@ -105,7 +103,6 @@ class TimeMoeRunner:
             )
             config.num_classes = num_classes
             config.classifier_dropout = classifier_dropout
-            config.pooling_strategy = pooling_strategy
             model = model_class(config)
             # Load the pretrained weights (this will load the backbone, classification
             # head will be randomly initialized)
@@ -240,7 +237,6 @@ class TimeMoeRunner:
                 task_type=train_config.get("task_type", "forecasting"),
                 num_classes=train_config.get("num_classes"),
                 classifier_dropout=train_config.get("classifier_dropout", 0.1),
-                pooling_strategy=train_config.get("pooling_strategy", "last_token"),
             )
             log_in_local_rank_0(f"Load model parameters from: {model_path}")
 
