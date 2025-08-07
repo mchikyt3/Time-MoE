@@ -1354,15 +1354,12 @@ class TimeMoeForPrediction(TimeMoePreTrainedModel, TSGenerationMixin):
 class TimeMoeClassificationHead(nn.Module):
     """Classification head for TimeMoE model."""
 
-    def __init__(
-        self,
-        hidden_size: int,
-        num_classes: int,
-        dropout: float = 0.1,
-    ):
+    def __init__(self, config: TimeMoeConfig):
         super().__init__()
-        self.dropout = nn.Dropout(dropout)
-        self.classifier = nn.Linear(hidden_size, num_classes)
+        self.dropout = nn.Dropout(getattr(config, "classifier_dropout", 0.1))
+        self.classifier = nn.Linear(
+            config.hidden_size, getattr(config, "num_classes", 2)
+        )
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         """
@@ -1386,16 +1383,9 @@ class TimeMoeForSequenceClassification(TimeMoePreTrainedModel):
     def __init__(self, config: TimeMoeConfig):
         super().__init__(config)
         self.config = config
-        self.num_classes = getattr(
-            config, "num_classes", 2
-        )  # Default to binary classification
 
         self.model = TimeMoeModel(config)
-        self.classification_head = TimeMoeClassificationHead(
-            hidden_size=config.hidden_size,
-            num_classes=self.num_classes,
-            dropout=getattr(config, "classifier_dropout", 0.1),
-        )
+        self.classification_head = TimeMoeClassificationHead(config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -1464,14 +1454,9 @@ class TimeMoeForTokenClassification(TimeMoePreTrainedModel):
     def __init__(self, config: TimeMoeConfig):
         super().__init__(config)
         self.config = config
-        self.num_classes = getattr(config, "num_classes", 2)
 
         self.model = TimeMoeModel(config)
-        self.classification_head = TimeMoeClassificationHead(
-            hidden_size=config.hidden_size,
-            num_classes=self.num_classes,
-            dropout=getattr(config, "classifier_dropout", 0.1),
-        )
+        self.classification_head = TimeMoeClassificationHead(config)
 
         # Initialize weights and apply final processing
         self.post_init()
