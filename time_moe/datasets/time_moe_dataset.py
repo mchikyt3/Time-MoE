@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
 import os
+
 import numpy as np
 
-from .ts_dataset import TimeSeriesDataset
-from .general_dataset import GeneralDataset
 from .binary_dataset import BinaryDataset
+from .general_dataset import GeneralDataset
+from .ts_dataset import TimeSeriesDataset
 
 
 class TimeMoEDataset(TimeSeriesDataset):
-
     def __init__(self, data_folder, normalization_method=None):
         self.data_folder = data_folder
         self.normalization_method = normalization_method
@@ -19,12 +18,14 @@ class TimeMoEDataset(TimeSeriesDataset):
         if normalization_method is None:
             self.normalization_method = None
         elif isinstance(normalization_method, str):
-            if normalization_method.lower() == 'max':
+            if normalization_method.lower() == "max":
                 self.normalization_method = max_scaler
-            elif normalization_method.lower() == 'zero':
+            elif normalization_method.lower() == "zero":
                 self.normalization_method = zero_scaler
             else:
-                raise ValueError(f'Unknown normalization method: {normalization_method}')
+                raise ValueError(
+                    f"Unknown normalization method: {normalization_method}"
+                )
         else:
             self.normalization_method = normalization_method
 
@@ -41,7 +42,10 @@ class TimeMoEDataset(TimeSeriesDataset):
             for root, dirs, files in os.walk(self.data_folder):
                 for file in files:
                     fn_path = os.path.join(root, file)
-                    if file != BinaryDataset.meta_file_name and GeneralDataset.is_valid_path(fn_path):
+                    if (
+                        file != BinaryDataset.meta_file_name
+                        and GeneralDataset.is_valid_path(fn_path)
+                    ):
                         ds = GeneralDataset(fn_path)
                         if len(ds) > 0:
                             self.datasets.append(ds)
@@ -54,9 +58,7 @@ class TimeMoEDataset(TimeSeriesDataset):
 
         self.cumsum_lengths = [0]
         for ds in self.datasets:
-            self.cumsum_lengths.append(
-                self.cumsum_lengths[-1] + len(ds)
-            )
+            self.cumsum_lengths.append(self.cumsum_lengths[-1] + len(ds))
         self.num_sequences = self.cumsum_lengths[-1]
 
     def __len__(self):
@@ -64,9 +66,11 @@ class TimeMoEDataset(TimeSeriesDataset):
 
     def __getitem__(self, seq_idx):
         if seq_idx >= self.cumsum_lengths[-1]:
-            raise ValueError(f'Index out of the dataset length: {seq_idx} >= {self.cumsum_lengths[-1]}')
-        elif seq_idx < 0:
-            raise ValueError(f'Index out of the dataset length: {seq_idx} < 0')
+            raise ValueError(
+                f"Index out of the dataset length: {seq_idx} >= {self.cumsum_lengths[-1]}"
+            )
+        if seq_idx < 0:
+            raise ValueError(f"Index out of the dataset length: {seq_idx} < 0")
 
         dataset_idx = binary_search(self.cumsum_lengths, seq_idx)
         dataset_offset = seq_idx - self.cumsum_lengths[dataset_idx]
@@ -78,9 +82,11 @@ class TimeMoEDataset(TimeSeriesDataset):
 
     def get_sequence_length_by_idx(self, seq_idx):
         if seq_idx >= self.cumsum_lengths[-1]:
-            raise ValueError(f'Index out of the dataset length: {seq_idx} >= {self.cumsum_lengths[-1]}')
-        elif seq_idx < 0:
-            raise ValueError(f'Index out of the dataset length: {seq_idx} < 0')
+            raise ValueError(
+                f"Index out of the dataset length: {seq_idx} >= {self.cumsum_lengths[-1]}"
+            )
+        if seq_idx < 0:
+            raise ValueError(f"Index out of the dataset length: {seq_idx} < 0")
 
         dataset_idx = binary_search(self.cumsum_lengths, seq_idx)
         dataset_offset = seq_idx - self.cumsum_lengths[dataset_idx]

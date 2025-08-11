@@ -1,6 +1,6 @@
 import argparse
-from time_moe.runner import TimeMoeRunner
 
+from time_moe.runner import TimeMoeRunner
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

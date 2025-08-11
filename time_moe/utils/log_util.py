@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 _*-
-import os
 import logging
+import os
 import sys
-import typing
 
 # -------- log setting ---------
 DEFAULT_LOGGER = "time_moe_logger"
 
 DEFAULT_FORMATTER = logging.Formatter(
-    '%(asctime)s - %(filename)s[pid:%(process)d;line:%(lineno)d:%(funcName)s] - %(levelname)s: %(message)s'
+    "%(asctime)s - %(filename)s[pid:%(process)d;line:%(lineno)d:%(funcName)s] - %(levelname)s: %(message)s"
 )
 
 _ch = logging.StreamHandler(stream=sys.stdout)
@@ -21,11 +19,10 @@ _LOGGER_CACHE = {}  # type: typing.Dict[str, logging.Logger]
 
 
 def is_local_rank_0():
-    local_rank = os.getenv('LOCAL_RANK')
-    if local_rank is None or local_rank == '0':
+    local_rank = os.getenv("LOCAL_RANK")
+    if local_rank is None or local_rank == "0":
         return True
-    else:
-        return False
+    return False
 
 
 def get_logger(name, level="INFO", handlers=None, update=False):
@@ -38,15 +35,15 @@ def get_logger(name, level="INFO", handlers=None, update=False):
     return logger
 
 
-def log_in_local_rank_0(*msg, type='info', used_logger=None):
-    msg = ' '.join([str(s) for s in msg])
+def log_in_local_rank_0(*msg, type="info", used_logger=None):
+    msg = " ".join([str(s) for s in msg])
     if used_logger is None:
         used_logger = logger
 
     if is_local_rank_0():
-        if type == 'warn' or type == 'warning':
+        if type == "warn" or type == "warning":
             used_logger.warning(msg)
-        elif type == 'error':
+        elif type == "error":
             used_logger.error(msg)
         else:
             used_logger.info(msg)
