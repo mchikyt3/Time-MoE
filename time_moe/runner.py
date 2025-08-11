@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import os
 import random
@@ -5,6 +7,10 @@ from functools import reduce
 from operator import mul
 
 import torch
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoModelForTokenClassification,
+)
 
 from time_moe.datasets.time_moe_dataset import TimeMoEDataset
 from time_moe.datasets.time_moe_window_dataset import TimeMoEWindowDataset
@@ -25,7 +31,17 @@ class TimeMoeRunner:
         self.output_path = output_path
         self.seed = seed
 
-    def load_model(self, model_path: str = None, from_scratch: bool = False, **kwargs):
+    def load_model(
+        self,
+        model_path: str = None,
+        from_scratch: bool = False,
+        freeze_backbone: bool = True,
+        task_type: str = "forecasting",
+        num_labels: int | None = None,
+        id2label: dict | None = None,
+        label2id: dict | None = None,
+        **kwargs,
+    ):
         if model_path is None:
             model_path = self.model_path
         attn = kwargs.pop("attn_implementation", None)
@@ -34,11 +50,11 @@ class TimeMoeRunner:
         elif attn == "auto":
             # try to use flash-attention
             try:
-                from flash_attn.bert_padding import (
+                from flash_attn.bert_padding import (  # noqa: F401, PLC0415
                     index_first_axis,
                     pad_input,
                     unpad_input,
-                )  # noqa
+                )
 
                 attn = "flash_attention_2"
             except:
@@ -56,16 +72,44 @@ class TimeMoeRunner:
             raise ValueError(f"Unknown attention method: {attn}")
         kwargs["attn_implementation"] = attn
 
-        if from_scratch:
-            config = TimeMoeConfig.from_pretrained(
-                model_path, _attn_implementation=attn
+        if task_type == "forecasting":
+            if from_scratch:
+                config = TimeMoeConfig.from_pretrained(
+                    model_path, _attn_implementation=attn
+                )
+                model = TimeMoeForPrediction(config)
+            else:
+                model = TimeMoeForPrediction.from_pretrained(model_path, **kwargs)
+        elif task_type == "sequence_classification":
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_path,
+                num_labels=num_labels,
+                id2label=id2label,
+                label2id=label2id,
+                **kwargs,
             )
-            model = TimeMoeForPrediction(config)
+        elif task_type == "token_classification":
+            model = AutoModelForTokenClassification.from_pretrained(
+                model_path,
+                num_labels=num_labels,
+                id2label=id2label,
+                label2id=label2id,
+                **kwargs,
+            )
         else:
-            model = TimeMoeForPrediction.from_pretrained(model_path, **kwargs)
+            raise ValueError(f"Unknown task type: {task_type}")
         return model
 
-    def train_model(self, from_scratch: bool = False, **kwargs):
+    def train_model(
+        self,
+        from_scratch: bool = False,
+        freeze_backbone: bool = True,
+        task_type: str = "forecasting",
+        num_labels: int | None = None,
+        id2label: dict | None = None,
+        label2id: dict | None = None,
+        **kwargs,
+    ):
         setup_seed(self.seed)
 
         train_config = kwargs
@@ -183,6 +227,11 @@ class TimeMoeRunner:
             model = self.load_model(
                 model_path=model_path,
                 from_scratch=from_scratch,
+                freeze_backbone=freeze_backbone,
+                task_type=task_type,
+                num_labels=num_labels,
+                id2label=id2label,
+                label2id=label2id,
                 torch_dtype=torch_dtype,
                 attn_implementation=train_config.get("attn_implementation", "eager"),
             )

@@ -1,4 +1,6 @@
 import argparse
+import json
+import pathlib
 
 from time_moe.runner import TimeMoeRunner
 
@@ -144,10 +146,52 @@ if __name__ == "__main__":
         help="number of workers for dataloader",
     )
 
+    parser.add_argument(
+        "--freeze_backbone",
+        action="store_true",
+        help="Freeze the backbone and only train task-specific heads "
+        "(forecasting output layers or classification heads)",
+    )
+    parser.add_argument(
+        "--task_type",
+        type=str,
+        choices=["forecasting", "sequence_classification", "token_classification"],
+        default="forecasting",
+        help="Type of task: forecasting (default), sequence_classification, or "
+        "token_classification",
+    )
+    parser.add_argument(
+        "--num_labels",
+        type=int,
+        default=None,
+        help="Number of class labels for classification tasks",
+    )
+    parser.add_argument(
+        "--id2label",
+        type=str,
+        default=None,
+        help="Path to JSON file containing id2label mapping (e.g., {0: 'class1', 1: 'class2'})",
+    )
+    parser.add_argument(
+        "--label2id",
+        type=str,
+        default=None,
+        help="Path to JSON file containing label2id mapping (e.g., {'class1': 0, 'class2': 1})",
+    )
+
     args = parser.parse_args()
 
     if args.normalization_method == "none":
         args.normalization_method = None
+
+    if args.id2label is not None:
+        id2label_path = args.id2label
+        with pathlib.Path(id2label_path).open() as f:
+            args.id2label = json.load(f)
+    if args.label2id is not None:
+        label2id_path = args.label2id
+        with pathlib.Path(label2id_path).open() as f:
+            args.label2id = json.load(f)
 
     runner = TimeMoeRunner(
         model_path=args.model_path,
@@ -187,4 +231,9 @@ if __name__ == "__main__":
         dataloader_num_workers=args.dataloader_num_workers,
         save_only_model=args.save_only_model,
         save_total_limit=args.save_total_limit,
+        freeze_backbone=args.freeze_backbone,
+        task_type=args.task_type,
+        num_labels=args.num_labels,
+        id2label=args.id2label,
+        label2id=args.label2id,
     )
