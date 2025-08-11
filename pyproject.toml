@@ -1,0 +1,27 @@
+[tool.ruff]
+[tool.ruff.format]
+docstring-code-format = true
+[tool.ruff.lint]
+select = [
+    "D",   # pydocstyle
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "YTT", # flake8-2020
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "FA",  # flake8-future-annotations
+    "INP", # flake8-no-pep420
+    "PT",  # flake8-pytest-style
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "PTH", # flake8-use-pathlib
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "PD",  # pandas-vet
+    "PL",  # Pylint
+    "NPY", # NumPy-specific rules
+]
+ignore = ["E203", "D202"]
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
