@@ -17,6 +17,17 @@ from transformers.utils import (
     logging,
 )
 
+try:
+    from transformers.modeling_layers import (
+        GenericForSequenceClassification,
+        GenericForTokenClassification,
+    )
+except ImportError:
+    from time_moe.future_transformers import (
+        GenericForSequenceClassification,
+        GenericForTokenClassification,
+    )
+
 from .configuration_time_moe import TimeMoeConfig
 from .ts_generation_mixin import TSGenerationMixin
 
@@ -1350,3 +1361,15 @@ class TimeMoeForPrediction(TimeMoePreTrainedModel, TSGenerationMixin):
                 ),
             )
         return reordered_past
+
+
+class TimeMoeForSequenceClassification(
+    GenericForSequenceClassification, TimeMoePreTrainedModel
+):
+    pass
+
+
+class TimeMoeForTokenClassification(
+    GenericForTokenClassification, TimeMoePreTrainedModel
+):
+    pass
