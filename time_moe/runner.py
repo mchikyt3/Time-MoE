@@ -7,14 +7,15 @@ from functools import reduce
 from operator import mul
 
 import torch
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoModelForTokenClassification,
-)
 
 from time_moe.datasets.time_moe_dataset import TimeMoEDataset
 from time_moe.datasets.time_moe_window_dataset import TimeMoEWindowDataset
-from time_moe.models.modeling_time_moe import TimeMoeConfig, TimeMoeForPrediction
+from time_moe.models.modeling_time_moe import (
+    TimeMoeConfig,
+    TimeMoeForPrediction,
+    TimeMoeForSequenceClassification,
+    TimeMoeForTokenClassification,
+)
 from time_moe.trainer.hf_trainer import TimeMoeTrainer, TimeMoETrainingArguments
 from time_moe.utils.dist_util import get_world_size
 from time_moe.utils.log_util import log_in_local_rank_0
@@ -37,9 +38,6 @@ class TimeMoeRunner:
         from_scratch: bool = False,
         freeze_backbone: bool = True,
         task_type: str = "forecasting",
-        num_labels: int | None = None,
-        id2label: dict | None = None,
-        label2id: dict | None = None,
         **kwargs,
     ):
         if model_path is None:
@@ -73,31 +71,22 @@ class TimeMoeRunner:
         kwargs["attn_implementation"] = attn
 
         if task_type == "forecasting":
-            if from_scratch:
-                config = TimeMoeConfig.from_pretrained(
-                    model_path, _attn_implementation=attn
-                )
-                model = TimeMoeForPrediction(config)
-            else:
-                model = TimeMoeForPrediction.from_pretrained(model_path, **kwargs)
+            model_class = TimeMoeForPrediction
         elif task_type == "sequence_classification":
-            model = AutoModelForSequenceClassification.from_pretrained(
-                model_path,
-                num_labels=num_labels,
-                id2label=id2label,
-                label2id=label2id,
-                **kwargs,
-            )
+            model_class = TimeMoeForSequenceClassification
         elif task_type == "token_classification":
-            model = AutoModelForTokenClassification.from_pretrained(
-                model_path,
-                num_labels=num_labels,
-                id2label=id2label,
-                label2id=label2id,
-                **kwargs,
-            )
+            model_class = TimeMoeForTokenClassification
         else:
             raise ValueError(f"Unknown task type: {task_type}")
+
+        if from_scratch:
+            config = TimeMoeConfig.from_pretrained(
+                model_path, _attn_implementation=attn
+            )
+            model = model_class(config)
+        else:
+            model = model_class.from_pretrained(model_path, **kwargs)
+
         return model
 
     def train_model(
