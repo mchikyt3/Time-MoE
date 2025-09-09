@@ -198,9 +198,9 @@ class TimeMoeRunner:
             save_total_limit=train_config.get("save_total_limit"),
         )
 
+        task_type = train_config.get("task_type", "forecasting")
         model_path = train_config.pop("model_path", None) or self.model_path
         if model_path is not None:
-            task_type = train_config.get("task_type", "forecasting")
             if task_type in ["sequence_classification", "token_classification"]:
                 classification_params = {
                     "num_labels": train_config.get("num_labels", 2),
@@ -220,6 +220,13 @@ class TimeMoeRunner:
             log_in_local_rank_0(f"Load model parameters from: {model_path}")
         else:
             raise ValueError("Model path is None")
+
+        if freeze_backbone:
+            for param in model.model.parameters():
+                param.requires_grad = False
+            log_in_local_rank_0(
+                f"Backbone parameters frozen, only training {task_type} output layers"
+            )
 
         num_total_params = 0
         for p in model.parameters():
