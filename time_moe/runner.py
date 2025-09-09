@@ -263,12 +263,14 @@ class TimeMoeRunner:
             )
 
         # Training
-        train_ds = self.get_train_dataset(
-            train_config["data_path"],
-            max_length=train_config["max_length"],
-            stride=train_config["stride"],
-            normalization_method=train_config["normalization_method"],
-        )
+        train_ds = train_config.get("train_dataset", None)
+        if train_ds is None:
+            train_ds = self.get_train_dataset(
+                train_config["data_path"],
+                max_length=train_config["max_length"],
+                stride=train_config["stride"],
+                normalization_method=train_config["normalization_method"],
+            )
         trainer = TimeMoeTrainer(
             model=model,
             args=training_args,
