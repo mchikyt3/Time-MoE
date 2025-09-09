@@ -36,7 +36,6 @@ class TimeMoeRunner:
         self,
         model_path: str = None,
         from_scratch: bool = False,
-        freeze_backbone: bool = True,
         task_type: str = "forecasting",
         **kwargs,
     ):
