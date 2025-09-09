@@ -229,16 +229,30 @@ class TimeMoeRunner:
             )
 
         num_total_params = 0
+        num_trainable_params = 0
         for p in model.parameters():
-            num_total_params += reduce(mul, p.shape)
+            param_count = reduce(mul, p.shape)
+            num_total_params += param_count
+            if p.requires_grad:
+                num_trainable_params += param_count
 
         # print statistics info
         log_in_local_rank_0(train_config)
         log_in_local_rank_0(training_args)
         log_in_local_rank_0(model.config)
         log_in_local_rank_0(
-            f"Number of the model parameters: {length_to_str(num_total_params)}"
+            f"Number of total model parameters: {length_to_str(num_total_params)}"
         )
+        log_in_local_rank_0(
+            f"Number of trainable parameters: {length_to_str(num_trainable_params)}"
+        )
+        if num_trainable_params < num_total_params:
+            frozen_params = num_total_params - num_trainable_params
+            trainable_ratio = num_trainable_params / num_total_params * 100
+            log_in_local_rank_0(
+                f"Number of frozen parameters: {length_to_str(frozen_params)} "
+                f"(Training {trainable_ratio:.1f}% of total parameters)"
+            )
 
         if train_steps > 0:
             total_train_tokens = (
