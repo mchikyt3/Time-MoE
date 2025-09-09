@@ -32,13 +32,7 @@ class TimeMoeRunner:
         self.output_path = output_path
         self.seed = seed
 
-    def load_model(
-        self,
-        model_path: str = None,
-        from_scratch: bool = False,
-        task_type: str = "forecasting",
-        **kwargs,
-    ):
+    def load_model(self, model_path: str = None, from_scratch: bool = False, **kwargs):
         if model_path is None:
             model_path = self.model_path
         attn = kwargs.pop("attn_implementation", None)
@@ -69,6 +63,7 @@ class TimeMoeRunner:
             raise ValueError(f"Unknown attention method: {attn}")
         kwargs["attn_implementation"] = attn
 
+        task_type = kwargs.pop("task_type", "forecasting")
         if task_type == "forecasting":
             model_class = TimeMoeForPrediction
         elif task_type == "sequence_classification":
@@ -89,14 +84,7 @@ class TimeMoeRunner:
         return model
 
     def train_model(
-        self,
-        from_scratch: bool = False,
-        freeze_backbone: bool = True,
-        task_type: str = "forecasting",
-        num_labels: int | None = None,
-        id2label: dict | None = None,
-        label2id: dict | None = None,
-        **kwargs,
+        self, from_scratch: bool = False, freeze_backbone: bool = True, **kwargs
     ):
         setup_seed(self.seed)
 
@@ -212,16 +200,22 @@ class TimeMoeRunner:
 
         model_path = train_config.pop("model_path", None) or self.model_path
         if model_path is not None:
+            task_type = train_config.get("task_type", "forecasting")
+            if task_type in ["sequence_classification", "token_classification"]:
+                classification_params = {
+                    "num_labels": train_config.get("num_labels", 2),
+                    "id2label": train_config.get("id2label", None),
+                    "label2id": train_config.get("label2id", None),
+                }
+            else:
+                classification_params = {}
             model = self.load_model(
                 model_path=model_path,
                 from_scratch=from_scratch,
-                freeze_backbone=freeze_backbone,
-                task_type=task_type,
-                num_labels=num_labels,
-                id2label=id2label,
-                label2id=label2id,
                 torch_dtype=torch_dtype,
                 attn_implementation=train_config.get("attn_implementation", "eager"),
+                task_type=task_type,
+                **classification_params,
             )
             log_in_local_rank_0(f"Load model parameters from: {model_path}")
         else:
